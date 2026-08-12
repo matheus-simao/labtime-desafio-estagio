@@ -56,6 +56,7 @@ Duas restrições, dois padrões trabalhando juntos, ambos sob a mesma interface
 | `sistema/tripulante.py` | Strategy | `FuncaoStrategy` = interface da estratégia; `OperadorCanhoes`, `MecanicoMotor`, `MedicoDeBordo` = estratégias concretas; `Tripulante` = Context |
 | `sistema/armas.py` | Strategy + Decorator | `Arma` = interface comum (estratégia); `LaserContinuo`, `EnxameDeMisseis` = estratégias concretas (armas base); `ModificadorArma` = Decorator base; `DanoDeFogo`, `PerfuracaoDeBlindagem` = decoradores concretos |
 | `sistema/nave.py` | — | `Nave` = fachada que integra os três sistemas acima, usada pelo console |
+| `sistema/ui.py` | — | Camada de apresentação do terminal (cores ANSI, painéis, barra de energia), isolada da lógica dos padrões |
 | `main.py` | — | Loop interativo de leitura de comandos no terminal |
 
 ## 3. Instruções de Execução
@@ -89,24 +90,45 @@ momento digitando `ajuda`). Alguns exemplos de sessão:
 
 ### Comandos disponíveis
 
-```
-ajuda                                 - mostra a lista de comandos
-status                                - mostra energia/estado do nucleo, tripulacao e arma
-tomar_dano <valor>                    - reduz a energia do nucleo
-reduzir_energia <valor>               - sinonimo de tomar_dano
-restaurar_energia <valor>             - aumenta a energia do nucleo
+**Núcleo de energia — Ticket 1 (Observer)**
 
-funcoes                               - lista as funcoes disponiveis para a tripulacao
-add_tripulante <nome> <funcao>        - adiciona um tripulante
-trocar_funcao <nome> <nova_funcao>    - troca a funcao de um tripulante vivo
-trabalhar <nome>                      - manda o tripulante executar a funcao atual
-tripulantes                           - lista os tripulantes cadastrados
+| Comando | Descrição |
+|---|---|
+| `tomar_dano <valor>` | reduz a energia do núcleo |
+| `reduzir_energia <valor>` | sinônimo de `tomar_dano` |
+| `restaurar_energia <valor>` | recupera energia do núcleo |
 
-armas                                 - lista os tipos de arma disponiveis
-equipar_arma <tipo>                   - equipa uma arma base na nave
-modificadores                         - lista os modificadores disponiveis
-adicionar_modificador <tipo>          - empilha um modificador na arma equipada
-atirar                                - dispara a arma atualmente equipada
+**Tripulação — Ticket 2 (Strategy)**
 
-sair                                  - encerra o programa
-```
+| Comando | Descrição |
+|---|---|
+| `add_tripulante <nome> <função>` | adiciona um tripulante |
+| `trocar_funcao <nome> <função>` | troca a função de um tripulante vivo |
+| `trabalhar <nome>` | executa a função atual do tripulante |
+| `tripulantes` | lista os tripulantes cadastrados |
+| `funcoes` | lista as funções disponíveis (`canhoneiro`, `mecanico`, `medico`) |
+
+**Armamento — Ticket 3 (Strategy + Decorator)**
+
+| Comando | Descrição |
+|---|---|
+| `equipar_arma <tipo>` | equipa uma arma base (`laser`, `misseis`) |
+| `adicionar_modificador <tipo>` | empilha um modificador (`fogo`, `perfuracao`) |
+| `atirar` | dispara a arma equipada |
+| `armas` | lista as armas disponíveis |
+| `modificadores` | lista os modificadores disponíveis |
+
+**Geral**
+
+| Comando | Descrição |
+|---|---|
+| `status` | painel com energia do núcleo, tripulação e pilha de disparo |
+| `ajuda` | mostra a lista de comandos |
+| `sair` | encerra o programa |
+
+### Observação sobre a saída no terminal
+
+O console usa cores ANSI e caracteres de caixa para facilitar a leitura. As cores
+são detectadas automaticamente e desligadas quando a saída não é um terminal
+(ou quando a variável de ambiente `NO_COLOR` está definida), então o programa
+continua legível em qualquer ambiente.

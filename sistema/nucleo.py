@@ -13,12 +13,14 @@ sem alterar nenhuma linha desta classe.
 from abc import ABC, abstractmethod
 from enum import Enum
 
+from sistema import ui
+
 
 class EstadoNucleo(Enum):
     """Estados possiveis do nucleo de energia da nave."""
 
     NORMAL = "NORMAL"
-    CRITICO = "CRITICO"
+    CRITICO = "CRÍTICO"
 
 
 class ObservadorNucleo(ABC):
@@ -67,6 +69,11 @@ class NucleoEnergia:
     def energia_atual(self) -> int:
         """Retorna a energia atual do nucleo."""
         return self._energia_atual
+
+    @property
+    def energia_maxima(self) -> int:
+        """Retorna a capacidade maxima de energia do nucleo."""
+        return self._energia_maxima
 
     @property
     def estado(self) -> EstadoNucleo:
@@ -159,11 +166,11 @@ class SistemaEscudos(ObservadorNucleo):
     def notificar(self, estado: EstadoNucleo, energia_atual: int) -> None:
         """Ajusta o foco dos escudos de acordo com o estado do nucleo."""
         if estado == EstadoNucleo.CRITICO:
-            self._foco_atual = "EMERGENCIA"
-            print(f"[Escudos] Energia critica ({energia_atual}). Foco de defesa mudou para EMERGENCIA.")
+            self._foco_atual = "EMERGÊNCIA"
+            ui.evento("Escudos", "Foco de defesa alterado para EMERGÊNCIA.", critico=True)
         else:
-            self._foco_atual = "PADRAO"
-            print(f"[Escudos] Energia normalizada ({energia_atual}). Foco de defesa voltou para PADRAO.")
+            self._foco_atual = "PADRÃO"
+            ui.evento("Escudos", "Foco de defesa restaurado para PADRÃO.", critico=False)
 
 
 class SistemaLuzes(ObservadorNucleo):
@@ -172,9 +179,9 @@ class SistemaLuzes(ObservadorNucleo):
     def notificar(self, estado: EstadoNucleo, energia_atual: int) -> None:
         """Liga ou desliga as luzes de acordo com o estado do nucleo."""
         if estado == EstadoNucleo.CRITICO:
-            print(f"[Luzes] Energia critica ({energia_atual}). Luzes das salas APAGADAS.")
+            ui.evento("Luzes", "Luzes das salas APAGADAS para poupar energia.", critico=True)
         else:
-            print(f"[Luzes] Energia normalizada ({energia_atual}). Luzes das salas ACESAS.")
+            ui.evento("Luzes", "Luzes das salas ACESAS novamente.", critico=False)
 
 
 class PainelNavegacao(ObservadorNucleo):
@@ -183,6 +190,6 @@ class PainelNavegacao(ObservadorNucleo):
     def notificar(self, estado: EstadoNucleo, energia_atual: int) -> None:
         """Exibe ou remove o alerta de emergencia no painel."""
         if estado == EstadoNucleo.CRITICO:
-            print(f"[Painel] Energia critica ({energia_atual}). ALERTA DE EMERGENCIA exibido.")
+            ui.evento("Painel", f"ALERTA DE EMERGÊNCIA exibido (energia: {energia_atual}).", critico=True)
         else:
-            print(f"[Painel] Energia normalizada ({energia_atual}). Alerta removido do painel.")
+            ui.evento("Painel", f"Alerta removido (energia: {energia_atual}).", critico=False)

@@ -30,13 +30,29 @@ class Arma(ABC):
         """
         raise NotImplementedError
 
+    @property
+    @abstractmethod
+    def descricao(self) -> str:
+        """
+        Nome legivel da arma, incluindo a pilha de modificadores aplicados.
+
+        Returns:
+            Descricao curta usada no painel de status.
+        """
+        raise NotImplementedError
+
 
 class LaserContinuo(Arma):
     """Arma base concreta: feixe de laser continuo."""
 
     def atirar(self) -> str:
         """Descreve o disparo basico do laser continuo."""
-        return "Laser Continuo disparado (dano base: 10)"
+        return "Laser Contínuo disparado (dano base: 10)"
+
+    @property
+    def descricao(self) -> str:
+        """Retorna o nome legivel da arma base."""
+        return "Laser Contínuo"
 
 
 class EnxameDeMisseis(Arma):
@@ -44,7 +60,12 @@ class EnxameDeMisseis(Arma):
 
     def atirar(self) -> str:
         """Descreve o disparo basico do enxame de misseis."""
-        return "Enxame de Misseis disparado (dano base: 25)"
+        return "Enxame de Mísseis disparado (dano base: 25)"
+
+    @property
+    def descricao(self) -> str:
+        """Retorna o nome legivel da arma base."""
+        return "Enxame de Mísseis"
 
 
 ARMAS_DISPONIVEIS: dict[str, type[Arma]] = {
@@ -59,6 +80,8 @@ class ModificadorArma(Arma):
     e implementa a mesma interface Arma, permitindo empilhamento dinamico.
     """
 
+    rotulo: str = "Modificador"
+
     def __init__(self, arma_decorada: Arma) -> None:
         """
         Args:
@@ -70,9 +93,16 @@ class ModificadorArma(Arma):
         """Delega o disparo para a arma decorada antes de acrescentar o efeito."""
         return self._arma_decorada.atirar()
 
+    @property
+    def descricao(self) -> str:
+        """Acrescenta o rotulo deste modificador a descricao da arma decorada."""
+        return f"{self._arma_decorada.descricao} + {self.rotulo}"
+
 
 class DanoDeFogo(ModificadorArma):
     """Decorador concreto: acrescenta dano de fogo ao disparo."""
+
+    rotulo = "Fogo"
 
     def atirar(self) -> str:
         """Acrescenta o efeito de dano de fogo ao resultado do disparo."""
@@ -83,10 +113,12 @@ class DanoDeFogo(ModificadorArma):
 class PerfuracaoDeBlindagem(ModificadorArma):
     """Decorador concreto: acrescenta perfuracao de blindagem ao disparo."""
 
+    rotulo = "Perfuração"
+
     def atirar(self) -> str:
         """Acrescenta o efeito de perfuracao de blindagem ao resultado do disparo."""
         resultado = super().atirar()
-        return f"{resultado} + Perfuracao de Blindagem (ignora parte da defesa)"
+        return f"{resultado} + Perfuração de Blindagem (ignora parte da defesa)"
 
 
 MODIFICADORES_DISPONIVEIS: dict[str, type[ModificadorArma]] = {

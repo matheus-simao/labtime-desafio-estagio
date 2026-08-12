@@ -36,31 +36,31 @@ class FuncaoStrategy(ABC):
 class OperadorCanhoes(FuncaoStrategy):
     """Estrategia concreta: tripulante operando os canhoes da nave."""
 
-    nome_funcao = "operador de canhoes"
+    nome_funcao = "operador de canhões"
 
     def trabalhar(self, nome_tripulante: str) -> str:
         """Descreve a acao de mirar e disparar os canhoes."""
-        return f"{nome_tripulante} mira os canhoes e aguarda ordem de disparo."
+        return f"{nome_tripulante} mira os canhões e aguarda a ordem de disparo."
 
 
 class MecanicoMotor(FuncaoStrategy):
     """Estrategia concreta: tripulante fazendo manutencao do motor."""
 
-    nome_funcao = "mecanico do motor"
+    nome_funcao = "mecânico do motor"
 
     def trabalhar(self, nome_tripulante: str) -> str:
         """Descreve a acao de reparo no motor."""
-        return f"{nome_tripulante} ajusta valvulas e repara o motor da nave."
+        return f"{nome_tripulante} ajusta as válvulas e repara o motor da nave."
 
 
 class MedicoDeBordo(FuncaoStrategy):
     """Estrategia concreta: tripulante cuidando da enfermaria."""
 
-    nome_funcao = "medico de bordo"
+    nome_funcao = "médico de bordo"
 
     def trabalhar(self, nome_tripulante: str) -> str:
         """Descreve a acao de atendimento medico."""
-        return f"{nome_tripulante} verifica os sinais vitais da tripulacao na enfermaria."
+        return f"{nome_tripulante} verifica os sinais vitais da tripulação na enfermaria."
 
 
 FUNCOES_DISPONIVEIS: dict[str, type[FuncaoStrategy]] = {

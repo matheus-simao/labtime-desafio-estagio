@@ -88,6 +88,23 @@ momento digitando `ajuda`). Alguns exemplos de sessão:
 > sair
 ```
 
+### Duas formas de usar cada comando
+
+Os trechos entre `< >` na tabela abaixo são valores que você escolhe — os sinais
+não devem ser digitados. Todo comando aceita duas formas de uso:
+
+```
+nave › tomar_dano 40                  # informando o valor direto
+```
+
+```
+nave › tomar_dano                     # ou deixando o console perguntar
+  ? Quanto de dano? › 40
+```
+
+O mesmo vale para tripulantes, armas e modificadores, que apresentam as opções
+válidas no próprio prompt. Um Enter vazio cancela a operação.
+
 ### Comandos disponíveis
 
 **Núcleo de energia — Ticket 1 (Observer)**

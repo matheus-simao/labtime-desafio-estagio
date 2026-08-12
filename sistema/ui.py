@@ -181,6 +181,28 @@ def erro(texto: str) -> None:
     print(f"{colorir('✗', Cor.VERMELHO)} {texto}")
 
 
+def aviso(texto: str) -> None:
+    """Imprime uma mensagem informativa de baixa severidade."""
+    print(f"{colorir('•', Cor.AMARELO)} {texto}")
+
+
+def perguntar(rotulo: str) -> str | None:
+    """
+    Solicita um dado complementar ao usuario durante a execucao de um comando.
+
+    Args:
+        rotulo: pergunta exibida ao usuario.
+
+    Returns:
+        Texto digitado, ou None se a entrada foi interrompida.
+    """
+    try:
+        return input(f"  {colorir('?', Cor.AMARELO)} {rotulo} {colorir('›', Cor.CIANO)} ")
+    except (EOFError, KeyboardInterrupt):
+        print()
+        return None
+
+
 def evento(origem: str, texto: str, critico: bool) -> None:
     """
     Imprime um evento emitido por um sistema da nave.

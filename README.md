@@ -15,9 +15,16 @@ tocar na classe do Núcleo.
 Isso é exatamente o problema que o **Observer** resolve: o Núcleo (Subject) mantém
 apenas uma lista de objetos que implementam uma interface genérica de observador e
 os notifica quando seu estado muda — sem nunca importar ou referenciar uma classe
-concreta como `SistemaEscudos`. Para adicionar "Suporte de Vida" no futuro, basta
-criar uma nova classe que implemente `ObservadorNucleo` e registrá-la; nenhuma
-linha de `NucleoEnergia` precisa mudar.
+concreta como `SistemaEscudos`.
+
+A separação é física, não apenas conceitual: os observadores concretos moram em
+`sistema/sistemas_bordo.py`, que importa de `sistema/nucleo.py`. A dependência
+nunca ocorre no sentido inverso — `nucleo.py` não importa nada do pacote, nem
+mesmo a camada de apresentação.
+
+Para adicionar "Suporte de Vida" no futuro, basta criar uma nova classe em
+`sistemas_bordo.py` que implemente `ObservadorNucleo` e registrá-la na `Nave`;
+nenhuma linha de `NucleoEnergia` precisa mudar.
 
 ### Ticket 2 — Comportamento Dinâmico da Tripulação → **Strategy**
 
@@ -55,7 +62,8 @@ labtime-desafio-estagio/
 ├── main.py                 # loop interativo de comandos (ponto de entrada)
 ├── README.md
 └── sistema/
-    ├── nucleo.py           # Ticket 1 · Observer
+    ├── nucleo.py           # Ticket 1 · Observer — Subject e interface
+    ├── sistemas_bordo.py   # Ticket 1 · Observer — observadores concretos
     ├── tripulante.py       # Ticket 2 · Strategy
     ├── armas.py            # Ticket 3 · Strategy + Decorator
     ├── nave.py             # integra os três sistemas
@@ -64,7 +72,8 @@ labtime-desafio-estagio/
 
 | Arquivo | Padrão | Papel |
 |---|---|---|
-| `sistema/nucleo.py` | Observer | `ObservadorNucleo` = interface Observer; `SistemaEscudos`, `SistemaLuzes`, `PainelNavegacao` = observadores concretos; `NucleoEnergia` = Subject |
+| `sistema/nucleo.py` | Observer | `ObservadorNucleo` = interface Observer; `NucleoEnergia` = Subject |
+| `sistema/sistemas_bordo.py` | Observer | `SistemaEscudos`, `SistemaLuzes`, `PainelNavegacao` = observadores concretos |
 | `sistema/tripulante.py` | Strategy | `FuncaoStrategy` = interface da estratégia; `OperadorCanhoes`, `MecanicoMotor`, `MedicoDeBordo` = estratégias concretas; `Tripulante` = Context |
 | `sistema/armas.py` | Strategy + Decorator | `Arma` = interface comum (estratégia); `LaserContinuo`, `EnxameDeMisseis` = estratégias concretas (armas base); `ModificadorArma` = Decorator base; `DanoDeFogo`, `PerfuracaoDeBlindagem` = decoradores concretos |
 | `sistema/nave.py` | — | `Nave` = fachada que integra os três sistemas acima, usada pelo console |
@@ -84,40 +93,54 @@ python main.py
 No Windows, se `python` não estiver no PATH, use `py main.py` ou `python3 main.py`.
 O programa precisa ser executado a partir da raiz do repositório.
 
-Ao iniciar, o console mostra a lista de comandos (também disponível a qualquer
-momento digitando `ajuda`). Uma sessão que exercita os três tickets:
+Ao iniciar, o console mostra o painel da nave e um resumo dos comandos; a lista
+detalhada fica em `ajuda`. Uma sessão que exercita os três tickets:
 
 ```
-nave › tomar_dano 80                   # Ticket 1: dispara os três observers
+nave › tomar_dano 80                     # Ticket 1: dispara todos os observers
 nave › status
-nave › restaurar_energia 60            # Ticket 1: observers reagem à normalização
-nave › add_tripulante Ana canhoneiro   # Ticket 2
-nave › trabalhar Ana
-nave › trocar_funcao Ana mecanico      # Ticket 2: troca sem recriar o objeto
-nave › trabalhar Ana
-nave › equipar_arma laser              # Ticket 3
-nave › adicionar_modificador fogo      # Ticket 3: empilha o 1º decorator
+nave › restaurar_energia 60              # Ticket 1: observers reagem à normalização
+nave › trabalhar Ana                     # Ticket 2: comportamento da função atual
+nave › trocar_funcao Ana mecanico        # Ticket 2: troca sem recriar o objeto
+nave › trabalhar Ana                     # mesma ordem, comportamento diferente
+nave › add_tripulante Clara medico       # Ticket 2: novo NPC em tempo de execução
+nave › equipar_arma misseis              # Ticket 3: troca a arma base
+nave › adicionar_modificador fogo        # Ticket 3: empilha o 1º decorator
 nave › adicionar_modificador perfuracao  # empilha o 2º sobre o 1º
 nave › atirar
 nave › sair
 ```
 
-### Duas formas de usar cada comando
+### Estado inicial
 
-Os trechos entre `< >` na tabela abaixo são valores que você escolhe — os sinais
-não devem ser digitados. Todo comando aceita duas formas de uso:
+Para que a demonstração comece utilizável, a nave é montada por
+`criar_nave_padrao()` (em `sistema/nave.py`) já com dois tripulantes a bordo
+(Ana como operadora de canhões, Bruno como mecânico) e o Laser Contínuo
+equipado. Assim `trabalhar` e `atirar` respondem já no primeiro comando, sem
+deixar de permitir que `add_tripulante` e `equipar_arma` sejam exercitados.
+
+### Três formas de digitar cada comando
+
+Os trechos entre `< >` nas tabelas abaixo são valores que você escolhe — os
+sinais não devem ser digitados.
 
 ```
-nave › tomar_dano 40                  # informando o valor direto
+nave › tomar_dano 40                  # 1. informando o valor direto
 ```
 
 ```
-nave › tomar_dano                     # ou deixando o console perguntar
+nave › tomar_dano                     # 2. deixando o console perguntar
   ? Quanto de dano? › 40
 ```
 
-O mesmo vale para tripulantes, armas e modificadores, que apresentam as opções
-válidas no próprio prompt. Um Enter vazio cancela a operação.
+```
+nave › tom 40                         # 3. abreviando, enquanto não for ambíguo
+```
+
+No modo guiado, tripulantes, armas e modificadores apresentam as opções válidas
+no próprio prompt, e um Enter vazio cancela a operação. Comandos digitados
+errado recebem sugestão (`atrair` → *você quis dizer: atirar?*), e abreviações
+ambíguas listam os candidatos em vez de adivinhar.
 
 ### Comandos disponíveis
 
@@ -125,19 +148,18 @@ válidas no próprio prompt. Um Enter vazio cancela a operação.
 
 | Comando | Descrição |
 |---|---|
-| `tomar_dano <valor>` | reduz a energia do núcleo |
-| `reduzir_energia <valor>` | sinônimo de `tomar_dano` |
+| `tomar_dano <valor>` | reduz a energia do núcleo (também aceita `reduzir_energia`) |
 | `restaurar_energia <valor>` | recupera energia do núcleo |
 
 **Tripulação — Ticket 2 (Strategy)**
 
 | Comando | Descrição |
 |---|---|
-| `add_tripulante <nome> <função>` | adiciona um tripulante |
-| `trocar_funcao <nome> <função>` | troca a função de um tripulante vivo |
 | `trabalhar <nome>` | executa a função atual do tripulante |
-| `tripulantes` | lista os tripulantes cadastrados |
-| `funcoes` | lista as funções disponíveis (`canhoneiro`, `mecanico`, `medico`) |
+| `trocar_funcao <nome> <função>` | troca a função de um tripulante vivo |
+| `add_tripulante <nome> <função>` | traz um novo tripulante a bordo |
+
+Funções disponíveis: `canhoneiro`, `mecanico`, `medico`.
 
 **Armamento — Ticket 3 (Strategy + Decorator)**
 
@@ -146,16 +168,29 @@ válidas no próprio prompt. Um Enter vazio cancela a operação.
 | `equipar_arma <tipo>` | equipa uma arma base (`laser`, `misseis`) |
 | `adicionar_modificador <tipo>` | empilha um modificador (`fogo`, `perfuracao`) |
 | `atirar` | dispara a arma equipada |
-| `armas` | lista as armas disponíveis |
-| `modificadores` | lista os modificadores disponíveis |
 
 **Geral**
 
 | Comando | Descrição |
 |---|---|
 | `status` | painel com energia do núcleo, tripulação e pilha de disparo |
-| `ajuda` | mostra a lista de comandos |
+| `ajuda` | mostra a lista detalhada de comandos |
 | `sair` | encerra o programa |
+
+### Observação sobre a documentação do código
+
+O briefing pede "documentação padrão javadoc". Como o projeto é em Python, as
+classes e métodos usam **docstrings** — a convenção equivalente da linguagem,
+descrita na PEP 257 — com a mesma estrutura semântica do javadoc:
+
+| javadoc | docstring usada aqui |
+|---|---|
+| descrição do método | primeira linha da docstring |
+| `@param nome` | seção `Args:` |
+| `@return` | seção `Returns:` |
+| `@throws` | seção `Raises:` |
+
+Todos os módulos, classes e métodos do projeto estão documentados.
 
 ### Observação sobre a saída no terminal
 

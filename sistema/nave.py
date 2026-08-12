@@ -6,9 +6,10 @@ A Nave e apenas o ponto de fachada usado pelo console para acionar cada
 sistema; ela nao contem a logica interna de nenhum dos padroes.
 """
 
-from sistema.armas import Arma
-from sistema.nucleo import NucleoEnergia, PainelNavegacao, SistemaEscudos, SistemaLuzes
-from sistema.tripulante import Tripulante
+from sistema.armas import Arma, LaserContinuo
+from sistema.nucleo import NucleoEnergia
+from sistema.sistemas_bordo import PainelNavegacao, SistemaEscudos, SistemaLuzes
+from sistema.tripulante import MecanicoMotor, OperadorCanhoes, Tripulante
 
 
 class Nave:
@@ -16,11 +17,12 @@ class Nave:
 
     def __init__(self) -> None:
         """
-        Monta a nave e inscreve os observadores padrao no nucleo de energia.
+        Monta a nave e inscreve os sistemas de bordo no nucleo de energia.
 
         E aqui, e apenas aqui, que os sistemas reativos sao ligados ao nucleo.
-        Para atender a uma nova demanda (ex: Suporte de Vida), basta acrescentar
-        outra chamada a adicionar_observador, sem tocar em NucleoEnergia.
+        Para atender a uma nova demanda de contingencia (ex: Suporte de Vida),
+        basta acrescentar outra chamada a adicionar_observador, sem tocar em
+        NucleoEnergia.
         """
         self.nucleo = NucleoEnergia(energia_maxima=100)
         self.nucleo.adicionar_observador(SistemaEscudos())
@@ -68,3 +70,21 @@ class Nave:
         if self.arma_atual is None:
             raise ValueError("Nenhuma arma equipada. Use 'equipar_arma' primeiro.")
         return self.arma_atual.atirar()
+
+
+def criar_nave_padrao() -> Nave:
+    """
+    Monta a nave usada na demonstracao, ja com tripulacao e armamento.
+
+    A Nave em si nasce generica; e esta funcao que define o cenario inicial,
+    para que o avaliador possa usar comandos como `trabalhar` e `atirar` logo
+    na primeira interacao, sem precisar cadastrar nada antes.
+
+    Returns:
+        Uma Nave com dois tripulantes a bordo e o laser equipado.
+    """
+    nave = Nave()
+    nave.adicionar_tripulante(Tripulante("Ana", OperadorCanhoes()))
+    nave.adicionar_tripulante(Tripulante("Bruno", MecanicoMotor()))
+    nave.equipar_arma(LaserContinuo())
+    return nave

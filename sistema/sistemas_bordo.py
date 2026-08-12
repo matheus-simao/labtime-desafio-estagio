@@ -1,0 +1,59 @@
+"""
+Ticket 1 - Sistemas de bordo que reagem ao estado do nucleo de energia.
+
+Estes sao os Observers concretos do padrao Observer. Eles vivem em um modulo
+separado do Subject de proposito: a dependencia e sempre deste modulo para o
+nucleo, nunca o contrario. O modulo `sistema.nucleo` nao importa nada daqui,
+o que torna explicita a restricao arquitetural do Ticket 1 - a classe do
+Nucleo nao conhece, nao referencia e nao chama Escudos, Luzes ou Paineis.
+
+Para atender a uma nova demanda de contingencia basta acrescentar aqui outra
+classe que implemente ObservadorNucleo e inscreve-la na Nave.
+"""
+
+from sistema import ui
+from sistema.nucleo import EstadoNucleo, ObservadorNucleo
+
+
+class SistemaEscudos(ObservadorNucleo):
+    """Observador concreto: muda o foco de defesa quando o nucleo entra em crise."""
+
+    def __init__(self) -> None:
+        """Inicia os escudos com o foco de defesa padrao."""
+        self._foco_atual = "PADRÃO"
+
+    @property
+    def foco_atual(self) -> str:
+        """Retorna o foco de defesa em vigor nos escudos."""
+        return self._foco_atual
+
+    def notificar(self, estado: EstadoNucleo, energia_atual: int) -> None:
+        """Ajusta o foco dos escudos de acordo com o estado do nucleo."""
+        if estado == EstadoNucleo.CRITICO:
+            self._foco_atual = "EMERGÊNCIA"
+            ui.evento("Escudos", "Foco de defesa alterado para EMERGÊNCIA.", critico=True)
+        else:
+            self._foco_atual = "PADRÃO"
+            ui.evento("Escudos", "Foco de defesa restaurado para PADRÃO.", critico=False)
+
+
+class SistemaLuzes(ObservadorNucleo):
+    """Observador concreto: apaga/acende as luzes das salas conforme o estado do nucleo."""
+
+    def notificar(self, estado: EstadoNucleo, energia_atual: int) -> None:
+        """Liga ou desliga as luzes de acordo com o estado do nucleo."""
+        if estado == EstadoNucleo.CRITICO:
+            ui.evento("Luzes", "Luzes das salas APAGADAS para poupar energia.", critico=True)
+        else:
+            ui.evento("Luzes", "Luzes das salas ACESAS novamente.", critico=False)
+
+
+class PainelNavegacao(ObservadorNucleo):
+    """Observador concreto: exibe ou remove alertas no painel de navegacao."""
+
+    def notificar(self, estado: EstadoNucleo, energia_atual: int) -> None:
+        """Exibe ou remove o alerta de emergencia no painel."""
+        if estado == EstadoNucleo.CRITICO:
+            ui.evento("Painel", f"ALERTA DE EMERGÊNCIA exibido (energia: {energia_atual}).", critico=True)
+        else:
+            ui.evento("Painel", f"Alerta removido (energia: {energia_atual}).", critico=False)

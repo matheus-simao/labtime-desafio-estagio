@@ -5,60 +5,83 @@ Nenhuma saida deste script e pre-programada de forma linear: o loop abaixo
 le comandos digitados pelo avaliador e reage dinamicamente, acionando os
 padroes de projeto implementados no pacote `sistema`.
 
+Os comandos ficam registrados em uma tabela unica (COMANDOS), a partir da qual
+sao gerados tanto a tela de ajuda quanto o despacho das acoes. Isso evita que
+a documentacao dos comandos e a execucao deles se desencontrem.
+
 Digite `ajuda` a qualquer momento para ver a lista de comandos.
 """
 
+import difflib
 import re
+from dataclasses import dataclass, field
+from typing import Callable
 
 from sistema import ui
 from sistema.armas import ARMAS_DISPONIVEIS, MODIFICADORES_DISPONIVEIS
-from sistema.nave import Nave
+from sistema.nave import Nave, criar_nave_padrao
 from sistema.nucleo import EstadoNucleo
 from sistema.tripulante import FUNCOES_DISPONIVEIS, Tripulante
 from sistema.ui import Cor
 
-GRUPOS_AJUDA: list[tuple[str, str, list[tuple[str, str]]]] = [
-    (
-        "NÚCLEO DE ENERGIA",
-        "Ticket 1 · Observer",
-        [
-            ("tomar_dano <valor>", "reduz a energia do núcleo"),
-            ("reduzir_energia <valor>", "sinônimo de tomar_dano"),
-            ("restaurar_energia <valor>", "recupera energia do núcleo"),
-        ],
-    ),
-    (
-        "TRIPULAÇÃO",
-        "Ticket 2 · Strategy",
-        [
-            ("add_tripulante <nome> <função>", "adiciona um tripulante"),
-            ("trocar_funcao <nome> <função>", "troca a função de um tripulante vivo"),
-            ("trabalhar <nome>", "executa a função atual do tripulante"),
-            ("tripulantes", "lista os tripulantes cadastrados"),
-            ("funcoes", "lista as funções disponíveis"),
-        ],
-    ),
-    (
-        "ARMAMENTO",
-        "Ticket 3 · Strategy + Decorator",
-        [
-            ("equipar_arma <tipo>", "equipa uma arma base na nave"),
-            ("adicionar_modificador <tipo>", "empilha um modificador na arma"),
-            ("atirar", "dispara a arma equipada"),
-            ("armas", "lista as armas disponíveis"),
-            ("modificadores", "lista os modificadores disponíveis"),
-        ],
-    ),
-    (
-        "GERAL",
-        "",
-        [
-            ("status", "mostra o painel completo da nave"),
-            ("ajuda", "mostra esta lista de comandos"),
-            ("sair", "encerra o programa"),
-        ],
-    ),
-]
+
+@dataclass(frozen=True)
+class Grupo:
+    """Agrupamento de comandos exibido na ajuda, associado a um ticket."""
+
+    titulo: str
+    resumo: str
+    etiqueta: str = ""
+
+
+GRUPO_NUCLEO = Grupo("NÚCLEO DE ENERGIA", "Núcleo", "Ticket 1 · Observer")
+GRUPO_TRIPULACAO = Grupo("TRIPULAÇÃO", "Tripulação", "Ticket 2 · Strategy")
+GRUPO_ARMAMENTO = Grupo("ARMAMENTO", "Armamento", "Ticket 3 · Strategy + Decorator")
+GRUPO_GERAL = Grupo("GERAL", "Geral")
+
+GRUPOS: tuple[Grupo, ...] = (GRUPO_NUCLEO, GRUPO_TRIPULACAO, GRUPO_ARMAMENTO, GRUPO_GERAL)
+
+
+@dataclass(frozen=True)
+class Comando:
+    """
+    Um comando do console: sua documentacao e a acao que ele executa.
+
+    Manter os dois lados na mesma estrutura garante que todo comando
+    despachavel apareca na ajuda, e vice-versa.
+    """
+
+    nome: str
+    descricao: str
+    grupo: Grupo
+    acao: Callable[[Nave, list[str]], None]
+    argumentos: str = ""
+    apelidos: tuple[str, ...] = ()
+    encerra: bool = False
+
+    @property
+    def assinatura(self) -> str:
+        """Nome do comando seguido dos seus argumentos, como aparece na ajuda."""
+        return f"{self.nome} {self.argumentos}".strip()
+
+    @property
+    def nomes(self) -> tuple[str, ...]:
+        """Todos os nomes aceitos para invocar o comando, incluindo apelidos."""
+        return (self.nome, *self.apelidos)
+
+
+@dataclass(frozen=True)
+class Resolucao:
+    """
+    Resultado da tentativa de identificar qual comando o usuario digitou.
+
+    Apenas um dos tres campos vem preenchido: o comando encontrado, os
+    candidatos de um prefixo ambiguo, ou as sugestoes para um nome errado.
+    """
+
+    comando: "Comando | None" = None
+    ambiguos: list[str] = field(default_factory=list)
+    sugestoes: list[str] = field(default_factory=list)
 
 
 def _converter_inteiro(texto: str) -> int | None:
@@ -142,48 +165,54 @@ def _pedir_opcao(pergunta: str, opcoes: dict, rotulos: list[str] | None = None) 
         ui.erro(f"Opção inválida. Use: {exibidas} (ou tecle Enter para cancelar).")
 
 
-def _formatar_comando(comando: str) -> tuple[str, int]:
+def _formatar_assinatura(assinatura: str) -> tuple[str, int]:
     """
     Colore o nome do comando e seus argumentos de forma distinta.
 
     Args:
-        comando: assinatura do comando (ex: "trabalhar <nome>").
+        assinatura: nome do comando seguido dos argumentos.
 
     Returns:
         Tupla com o texto ja colorido e a sua largura visivel em caracteres.
     """
-    nome, _, argumentos = comando.partition(" ")
+    nome, _, argumentos = assinatura.partition(" ")
     if argumentos:
         texto = f"{ui.colorir(nome, Cor.VERDE)} {ui.colorir(argumentos, Cor.CIANO)}"
     else:
         texto = ui.colorir(nome, Cor.VERDE)
-    return texto, len(comando)
+    return texto, len(assinatura)
 
 
-def cmd_ajuda() -> None:
-    """Imprime a lista de comandos agrupada por ticket do briefing."""
-    largura = max(len(comando) for _, _, comandos in GRUPOS_AJUDA for comando, _ in comandos)
+def cmd_ajuda(nave: Nave, args: list[str]) -> None:
+    """Imprime a lista completa de comandos, agrupada por ticket do briefing."""
+    largura = max(len(comando.assinatura) for comando in COMANDOS)
 
-    for titulo, padrao, comandos in GRUPOS_AJUDA:
-        etiqueta = f"  {ui.colorir(padrao, Cor.FRACO)}" if padrao else ""
-        print(f"\n{ui.colorir(titulo, Cor.NEGRITO + Cor.CIANO)}{etiqueta}")
-        for comando, descricao in comandos:
-            texto, visivel = _formatar_comando(comando)
+    for grupo in GRUPOS:
+        etiqueta = f"  {ui.colorir(grupo.etiqueta, Cor.FRACO)}" if grupo.etiqueta else ""
+        print(f"\n{ui.colorir(grupo.titulo, Cor.NEGRITO + Cor.CIANO)}{etiqueta}")
+        for comando in COMANDOS:
+            if comando.grupo is not grupo:
+                continue
+            texto, visivel = _formatar_assinatura(comando.assinatura)
             condutor = ui.colorir("·" * (largura - visivel + 3), Cor.FRACO)
-            print(f"  {texto} {condutor}  {descricao}")
+            print(f"  {texto} {condutor}  {comando.descricao}")
+            if comando.apelidos:
+                apelidos = ", ".join(comando.apelidos)
+                print(f"  {ui.colorir(f'└ também aceita: {apelidos}', Cor.FRACO)}")
 
     print(
         "\n"
         + ui.colorir(
             "Os trechos entre < > são valores que você escolhe — não digite os sinais.\n"
-            "Pode digitar só o nome do comando (ex: tomar_dano) que o console pergunta o resto.",
+            "Pode digitar só o nome do comando que o console pergunta o resto,\n"
+            "e abreviar enquanto não ficar ambíguo (atir → atirar).",
             Cor.FRACO,
         )
         + "\n"
     )
 
 
-def cmd_status(nave: Nave) -> None:
+def cmd_status(nave: Nave, args: list[str]) -> None:
     """Imprime o painel com energia do núcleo, tripulação e arma equipada."""
     nucleo = nave.nucleo
     barra = ui.barra_energia(nucleo.energia_atual, nucleo.energia_maxima)
@@ -241,12 +270,6 @@ def cmd_restaurar_energia(nave: Nave, args: list[str]) -> None:
     ui.sucesso(f"Núcleo recuperou {ganho} de energia. Energia atual: {nave.nucleo.energia_atual}")
 
 
-def cmd_funcoes() -> None:
-    """Lista as funcoes (estrategias) disponiveis para a tripulacao."""
-    for chave, classe in FUNCOES_DISPONIVEIS.items():
-        print(f"  {ui.colorir(chave.ljust(14), Cor.VERDE)} {classe.nome_funcao}")
-
-
 def cmd_add_tripulante(nave: Nave, args: list[str]) -> None:
     """Cadastra um novo tripulante, perguntando nome e funcao se necessario."""
     nome = args[0] if args else _pedir_texto("Nome do tripulante?")
@@ -293,7 +316,7 @@ def _resolver_tripulante(nave: Nave, args: list[str], pergunta: str) -> Tripulan
 
     tripulante = nave.tripulantes.get(nome.lower())
     if tripulante is None:
-        ui.erro(f"Tripulante '{nome}' não encontrado. A bordo: {', '.join(nave.tripulantes)}")
+        ui.erro(f"Tripulante '{nome}' não encontrado. A bordo: {', '.join(nomes)}")
     return tripulante
 
 
@@ -326,21 +349,6 @@ def cmd_trabalhar(nave: Nave, args: list[str]) -> None:
     ui.fala(tripulante.trabalhar())
 
 
-def cmd_tripulantes(nave: Nave) -> None:
-    """Lista os tripulantes cadastrados e suas funcoes atuais."""
-    if not nave.tripulantes:
-        ui.erro("Nenhum tripulante a bordo.")
-        return
-    for tripulante in nave.tripulantes.values():
-        print(f"  {ui.colorir('•', Cor.MAGENTA)} {tripulante.nome.ljust(12)} {tripulante.funcao_atual}")
-
-
-def cmd_armas() -> None:
-    """Lista os tipos de arma base disponiveis."""
-    for chave, classe in ARMAS_DISPONIVEIS.items():
-        print(f"  {ui.colorir(chave.ljust(14), Cor.VERDE)} {classe().descricao}")
-
-
 def cmd_equipar_arma(nave: Nave, args: list[str]) -> None:
     """Equipa uma arma base nova na nave, descartando modificadores anteriores."""
     if args and args[0].lower() not in ARMAS_DISPONIVEIS:
@@ -352,12 +360,6 @@ def cmd_equipar_arma(nave: Nave, args: list[str]) -> None:
         return
     nave.equipar_arma(ARMAS_DISPONIVEIS[chave]())
     ui.sucesso(f"Arma equipada: {nave.arma_atual.descricao}")
-
-
-def cmd_modificadores() -> None:
-    """Lista os modificadores (decoradores) disponiveis."""
-    for chave, classe in MODIFICADORES_DISPONIVEIS.items():
-        print(f"  {ui.colorir(chave.ljust(14), Cor.VERDE)} {classe.rotulo}")
 
 
 def cmd_adicionar_modificador(nave: Nave, args: list[str]) -> None:
@@ -376,12 +378,136 @@ def cmd_adicionar_modificador(nave: Nave, args: list[str]) -> None:
     ui.sucesso(f"Pilha de disparo: {nave.arma_atual.descricao}")
 
 
-def cmd_atirar(nave: Nave) -> None:
+def cmd_atirar(nave: Nave, args: list[str]) -> None:
     """Dispara a arma atualmente equipada, delegando toda a logica a ela."""
     try:
         ui.disparo(nave.atirar())
     except ValueError as erro:
         ui.erro(str(erro))
+
+
+def cmd_sair(nave: Nave, args: list[str]) -> None:
+    """Encerra o console. O desligamento em si e tratado pelo loop principal."""
+    return
+
+
+COMANDOS: tuple[Comando, ...] = (
+    Comando(
+        nome="tomar_dano",
+        argumentos="<valor>",
+        descricao="reduz a energia do núcleo",
+        grupo=GRUPO_NUCLEO,
+        acao=cmd_tomar_dano,
+        apelidos=("reduzir_energia",),
+    ),
+    Comando(
+        nome="restaurar_energia",
+        argumentos="<valor>",
+        descricao="recupera energia do núcleo",
+        grupo=GRUPO_NUCLEO,
+        acao=cmd_restaurar_energia,
+    ),
+    Comando(
+        nome="trabalhar",
+        argumentos="<nome>",
+        descricao="executa a função atual do tripulante",
+        grupo=GRUPO_TRIPULACAO,
+        acao=cmd_trabalhar,
+    ),
+    Comando(
+        nome="trocar_funcao",
+        argumentos="<nome> <função>",
+        descricao="troca a função de um tripulante vivo",
+        grupo=GRUPO_TRIPULACAO,
+        acao=cmd_trocar_funcao,
+    ),
+    Comando(
+        nome="add_tripulante",
+        argumentos="<nome> <função>",
+        descricao="traz um novo tripulante a bordo",
+        grupo=GRUPO_TRIPULACAO,
+        acao=cmd_add_tripulante,
+    ),
+    Comando(
+        nome="equipar_arma",
+        argumentos="<tipo>",
+        descricao="equipa uma arma base na nave",
+        grupo=GRUPO_ARMAMENTO,
+        acao=cmd_equipar_arma,
+    ),
+    Comando(
+        nome="adicionar_modificador",
+        argumentos="<tipo>",
+        descricao="empilha um modificador na arma",
+        grupo=GRUPO_ARMAMENTO,
+        acao=cmd_adicionar_modificador,
+    ),
+    Comando(
+        nome="atirar",
+        descricao="dispara a arma equipada",
+        grupo=GRUPO_ARMAMENTO,
+        acao=cmd_atirar,
+    ),
+    Comando(
+        nome="status",
+        descricao="mostra o painel completo da nave",
+        grupo=GRUPO_GERAL,
+        acao=cmd_status,
+    ),
+    Comando(
+        nome="ajuda",
+        descricao="mostra a lista detalhada de comandos",
+        grupo=GRUPO_GERAL,
+        acao=cmd_ajuda,
+        apelidos=("help",),
+    ),
+    Comando(
+        nome="sair",
+        descricao="encerra o programa",
+        grupo=GRUPO_GERAL,
+        acao=cmd_sair,
+        apelidos=("exit", "quit"),
+        encerra=True,
+    ),
+)
+
+INDICE_COMANDOS: dict[str, Comando] = {
+    nome: comando for comando in COMANDOS for nome in comando.nomes
+}
+
+
+def resolver_comando(entrada: str) -> Resolucao:
+    """
+    Descobre a qual comando corresponde o texto digitado.
+
+    A busca segue esta ordem: nome exato (ou apelido), prefixo unico e, por
+    fim, nomes parecidos. Um prefixo que sirva a mais de um comando nunca e
+    adivinhado - os candidatos sao devolvidos para que o usuario escolha.
+
+    Args:
+        entrada: primeira palavra digitada pelo usuario, em minusculas.
+
+    Returns:
+        Uma Resolucao com o comando encontrado, os candidatos ambiguos ou
+        as sugestoes de correcao.
+    """
+    exato = INDICE_COMANDOS.get(entrada)
+    if exato is not None:
+        return Resolucao(comando=exato)
+
+    prefixados = sorted({
+        comando.nome
+        for comando in COMANDOS
+        for nome in comando.nomes
+        if nome.startswith(entrada)
+    })
+    if len(prefixados) == 1:
+        return Resolucao(comando=INDICE_COMANDOS[prefixados[0]])
+    if prefixados:
+        return Resolucao(ambiguos=prefixados)
+
+    parecidos = difflib.get_close_matches(entrada, list(INDICE_COMANDOS), n=3, cutoff=0.6)
+    return Resolucao(sugestoes=parecidos)
 
 
 def executar_comando(nave: Nave, linha: str) -> bool:
@@ -393,55 +519,56 @@ def executar_comando(nave: Nave, linha: str) -> bool:
         linha: texto digitado no console.
 
     Returns:
-        False se o comando for 'sair' (encerra o loop), True caso contrario.
+        False se o comando encerra o console, True caso contrario.
     """
     limpa = re.sub(r"\s*<([^>]*)>", r" \1", linha.replace("﻿", ""))
     partes = limpa.strip().split()
     if not partes:
         return True
-    comando, args = partes[0].lower(), partes[1:]
 
-    if comando in ("sair", "exit", "quit"):
-        return False
-    if comando in ("ajuda", "help"):
-        cmd_ajuda()
-    elif comando == "status":
-        cmd_status(nave)
-    elif comando in ("tomar_dano", "reduzir_energia"):
-        cmd_tomar_dano(nave, args)
-    elif comando == "restaurar_energia":
-        cmd_restaurar_energia(nave, args)
-    elif comando == "funcoes":
-        cmd_funcoes()
-    elif comando == "add_tripulante":
-        cmd_add_tripulante(nave, args)
-    elif comando == "trocar_funcao":
-        cmd_trocar_funcao(nave, args)
-    elif comando == "trabalhar":
-        cmd_trabalhar(nave, args)
-    elif comando == "tripulantes":
-        cmd_tripulantes(nave)
-    elif comando == "armas":
-        cmd_armas()
-    elif comando == "equipar_arma":
-        cmd_equipar_arma(nave, args)
-    elif comando == "modificadores":
-        cmd_modificadores()
-    elif comando == "adicionar_modificador":
-        cmd_adicionar_modificador(nave, args)
-    elif comando == "atirar":
-        cmd_atirar(nave)
-    else:
-        ui.erro(f"Comando desconhecido: '{comando}'. Digite 'ajuda' para ver os comandos.")
-    return True
+    entrada, args = partes[0].lower(), partes[1:]
+    resolucao = resolver_comando(entrada)
+
+    if resolucao.comando is None:
+        if resolucao.ambiguos:
+            ui.erro(f"'{entrada}' pode ser vários comandos: {', '.join(resolucao.ambiguos)}")
+        elif resolucao.sugestoes:
+            ui.erro(f"Comando '{entrada}' não existe. Você quis dizer: {', '.join(resolucao.sugestoes)}?")
+        else:
+            ui.erro(f"Comando '{entrada}' não existe. Digite 'ajuda' para ver a lista.")
+        return True
+
+    resolucao.comando.acao(nave, args)
+    return not resolucao.comando.encerra
+
+
+def mostrar_resumo() -> None:
+    """Imprime o resumo compacto dos comandos, um grupo por linha."""
+    for grupo in GRUPOS:
+        nomes = " · ".join(comando.nome for comando in COMANDOS if comando.grupo is grupo)
+        print(f"  {ui.colorir(grupo.resumo.ljust(11), Cor.CIANO)} {nomes}")
+
+    print(
+        "\n"
+        + ui.colorir(
+            "Digite só o nome do comando que o console pergunta o resto. "
+            "Abreviações funcionam (atir → atirar).\n"
+            "Use 'ajuda' para a lista detalhada.",
+            Cor.FRACO,
+        )
+    )
 
 
 def main() -> None:
     """Inicializa a Nave e mantem o loop interativo de leitura de comandos."""
     ui.preparar_saida()
-    nave = Nave()
+    nave = criar_nave_padrao()
+
     ui.cabecalho()
-    cmd_ajuda()
+    cmd_status(nave, [])
+    print()
+    mostrar_resumo()
+    print()
 
     continuar = True
     while continuar:

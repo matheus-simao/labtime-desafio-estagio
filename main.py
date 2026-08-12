@@ -59,13 +59,35 @@ GRUPOS_AJUDA: list[tuple[str, str, list[tuple[str, str]]]] = [
 ]
 
 
+def _formatar_comando(comando: str) -> tuple[str, int]:
+    """
+    Colore o nome do comando e seus argumentos de forma distinta.
+
+    Args:
+        comando: assinatura do comando (ex: "trabalhar <nome>").
+
+    Returns:
+        Tupla com o texto ja colorido e a sua largura visivel em caracteres.
+    """
+    nome, _, argumentos = comando.partition(" ")
+    if argumentos:
+        texto = f"{ui.colorir(nome, Cor.VERDE)} {ui.colorir(argumentos, Cor.CIANO)}"
+    else:
+        texto = ui.colorir(nome, Cor.VERDE)
+    return texto, len(comando)
+
+
 def cmd_ajuda() -> None:
     """Imprime a lista de comandos agrupada por ticket do briefing."""
+    largura = max(len(comando) for _, _, comandos in GRUPOS_AJUDA for comando, _ in comandos)
+
     for titulo, padrao, comandos in GRUPOS_AJUDA:
         etiqueta = f"  {ui.colorir(padrao, Cor.FRACO)}" if padrao else ""
         print(f"\n{ui.colorir(titulo, Cor.NEGRITO + Cor.CIANO)}{etiqueta}")
         for comando, descricao in comandos:
-            print(f"  {ui.colorir(comando.ljust(32), Cor.VERDE)}  {descricao}")
+            texto, visivel = _formatar_comando(comando)
+            condutor = ui.colorir("·" * (largura - visivel + 3), Cor.FRACO)
+            print(f"  {texto} {condutor}  {descricao}")
     print()
 
 

@@ -198,6 +198,16 @@ descrita na PEP 257 — com a mesma estrutura semântica do javadoc:
 
 Todos os módulos, classes e métodos do projeto estão documentados.
 
+A equivalência não é só de forma: assim como o `javadoc` gera documentação a
+partir dos comentários Java, o `pydoc` — que também faz parte da biblioteca
+padrão — gera a documentação deste projeto a partir das docstrings. Para ver no
+terminal ou em HTML:
+
+```bash
+python -m pydoc sistema.nucleo
+python -m pydoc -w sistema.nucleo
+```
+
 ### Observação sobre a saída no terminal
 
 O console usa cores ANSI e caracteres de caixa para facilitar a leitura. As cores

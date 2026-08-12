@@ -15,6 +15,13 @@ class Nave:
     """Agrega o nucleo de energia, a tripulacao e a arma atualmente equipada."""
 
     def __init__(self) -> None:
+        """
+        Monta a nave e inscreve os observadores padrao no nucleo de energia.
+
+        E aqui, e apenas aqui, que os sistemas reativos sao ligados ao nucleo.
+        Para atender a uma nova demanda (ex: Suporte de Vida), basta acrescentar
+        outra chamada a adicionar_observador, sem tocar em NucleoEnergia.
+        """
         self.nucleo = NucleoEnergia(energia_maxima=100)
         self.nucleo.adicionar_observador(SistemaEscudos())
         self.nucleo.adicionar_observador(SistemaLuzes())
@@ -59,5 +66,5 @@ class Nave:
             ValueError: se nenhuma arma estiver equipada.
         """
         if self.arma_atual is None:
-            raise ValueError("Nenhuma arma equipada. Use 'equipar_arma <tipo>' primeiro.")
+            raise ValueError("Nenhuma arma equipada. Use 'equipar_arma' primeiro.")
         return self.arma_atual.atirar()

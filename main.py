@@ -214,8 +214,13 @@ def cmd_tomar_dano(nave: Nave, args: list[str]) -> None:
         else:
             ui.aviso("Comando cancelado.")
         return
+    antes = nave.nucleo.energia_atual
     nave.nucleo.tomar_dano(valor)
-    ui.sucesso(f"Núcleo recebeu {valor} de dano. Energia atual: {nave.nucleo.energia_atual}")
+    perdido = antes - nave.nucleo.energia_atual
+    if perdido == 0:
+        ui.aviso("O núcleo já está sem energia. Nada mudou.")
+        return
+    ui.sucesso(f"Núcleo perdeu {perdido} de energia. Energia atual: {nave.nucleo.energia_atual}")
 
 
 def cmd_restaurar_energia(nave: Nave, args: list[str]) -> None:
@@ -227,8 +232,13 @@ def cmd_restaurar_energia(nave: Nave, args: list[str]) -> None:
         else:
             ui.aviso("Comando cancelado.")
         return
+    antes = nave.nucleo.energia_atual
     nave.nucleo.restaurar_energia(valor)
-    ui.sucesso(f"Núcleo restaurou {valor} de energia. Energia atual: {nave.nucleo.energia_atual}")
+    ganho = nave.nucleo.energia_atual - antes
+    if ganho == 0:
+        ui.aviso("O núcleo já está com energia máxima. Nada mudou.")
+        return
+    ui.sucesso(f"Núcleo recuperou {ganho} de energia. Energia atual: {nave.nucleo.energia_atual}")
 
 
 def cmd_funcoes() -> None:

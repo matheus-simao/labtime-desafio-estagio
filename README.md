@@ -50,6 +50,18 @@ Duas restrições, dois padrões trabalhando juntos, ambos sob a mesma interface
 
 ## 2. Papéis do Código
 
+```
+labtime-desafio-estagio/
+├── main.py                 # loop interativo de comandos (ponto de entrada)
+├── README.md
+└── sistema/
+    ├── nucleo.py           # Ticket 1 · Observer
+    ├── tripulante.py       # Ticket 2 · Strategy
+    ├── armas.py            # Ticket 3 · Strategy + Decorator
+    ├── nave.py             # integra os três sistemas
+    └── ui.py               # apresentação no terminal (sem lógica de padrões)
+```
+
 | Arquivo | Padrão | Papel |
 |---|---|---|
 | `sistema/nucleo.py` | Observer | `ObservadorNucleo` = interface Observer; `SistemaEscudos`, `SistemaLuzes`, `PainelNavegacao` = observadores concretos; `NucleoEnergia` = Subject |
@@ -64,28 +76,30 @@ Duas restrições, dois padrões trabalhando juntos, ambos sob a mesma interface
 Requisitos: Python 3.10+ (usa apenas a biblioteca padrão, sem dependências externas).
 
 ```bash
-git clone <URL_DESTE_REPOSITORIO>
+git clone https://github.com/matheus-simao/labtime-desafio-estagio.git
 cd labtime-desafio-estagio
 python main.py
 ```
 
 No Windows, se `python` não estiver no PATH, use `py main.py` ou `python3 main.py`.
+O programa precisa ser executado a partir da raiz do repositório.
 
 Ao iniciar, o console mostra a lista de comandos (também disponível a qualquer
-momento digitando `ajuda`). Alguns exemplos de sessão:
+momento digitando `ajuda`). Uma sessão que exercita os três tickets:
 
 ```
-> tomar_dano 80
-> status
-> add_tripulante Ana canhoneiro
-> trabalhar Ana
-> trocar_funcao Ana mecanico
-> trabalhar Ana
-> equipar_arma laser
-> adicionar_modificador fogo
-> adicionar_modificador perfuracao
-> atirar
-> sair
+nave › tomar_dano 80                   # Ticket 1: dispara os três observers
+nave › status
+nave › restaurar_energia 60            # Ticket 1: observers reagem à normalização
+nave › add_tripulante Ana canhoneiro   # Ticket 2
+nave › trabalhar Ana
+nave › trocar_funcao Ana mecanico      # Ticket 2: troca sem recriar o objeto
+nave › trabalhar Ana
+nave › equipar_arma laser              # Ticket 3
+nave › adicionar_modificador fogo      # Ticket 3: empilha o 1º decorator
+nave › adicionar_modificador perfuracao  # empilha o 2º sobre o 1º
+nave › atirar
+nave › sair
 ```
 
 ### Duas formas de usar cada comando

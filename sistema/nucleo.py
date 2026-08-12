@@ -161,7 +161,8 @@ class SistemaEscudos(ObservadorNucleo):
     """Observador concreto: muda o foco de defesa quando o nucleo entra em crise."""
 
     def __init__(self) -> None:
-        self._foco_atual = "PADRAO"
+        """Inicia os escudos com o foco de defesa padrao."""
+        self._foco_atual = "PADRÃO"
 
     def notificar(self, estado: EstadoNucleo, energia_atual: int) -> None:
         """Ajusta o foco dos escudos de acordo com o estado do nucleo."""

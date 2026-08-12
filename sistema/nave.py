@@ -8,7 +8,7 @@ sistema; ela nao contem a logica interna de nenhum dos padroes.
 
 from sistema.armas import Arma, LaserContinuo
 from sistema.nucleo import NucleoEnergia
-from sistema.sistemas_bordo import PainelNavegacao, SistemaEscudos, SistemaLuzes
+from sistema.sistemas_bordo import PainelNavegacao, SistemaEscudos, SistemaLuzes, SuporteDeVida
 from sistema.tripulante import MecanicoMotor, OperadorCanhoes, Tripulante
 
 
@@ -28,6 +28,7 @@ class Nave:
         self.nucleo.adicionar_observador(SistemaEscudos())
         self.nucleo.adicionar_observador(SistemaLuzes())
         self.nucleo.adicionar_observador(PainelNavegacao())
+        self.nucleo.adicionar_observador(SuporteDeVida())
 
         self.tripulantes: dict[str, Tripulante] = {}
         self.arma_atual: Arma | None = None

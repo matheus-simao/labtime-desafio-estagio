@@ -57,3 +57,20 @@ class PainelNavegacao(ObservadorNucleo):
             ui.evento("Painel", f"ALERTA DE EMERGÊNCIA exibido (energia: {energia_atual}).", critico=True)
         else:
             ui.evento("Painel", f"Alerta removido (energia: {energia_atual}).", critico=False)
+
+
+class SuporteDeVida(ObservadorNucleo):
+    """
+    Observador concreto: corta o suporte de vida para o modo de reserva.
+
+    Esta e a demanda futura citada pelo Tech Lead no Ticket 1. Ela foi
+    atendida criando esta classe e inscrevendo-a na Nave, sem alterar uma
+    linha sequer de NucleoEnergia.
+    """
+
+    def notificar(self, estado: EstadoNucleo, energia_atual: int) -> None:
+        """Alterna o suporte de vida entre modo de reserva e operacao plena."""
+        if estado == EstadoNucleo.CRITICO:
+            ui.evento("Suporte de Vida", "Reduzido ao MÍNIMO: reserva de oxigênio ativada.", critico=True)
+        else:
+            ui.evento("Suporte de Vida", "Restabelecido em operação plena.", critico=False)

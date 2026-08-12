@@ -22,9 +22,15 @@ A separação é física, não apenas conceitual: os observadores concretos mora
 nunca ocorre no sentido inverso — `nucleo.py` não importa nada do pacote, nem
 mesmo a camada de apresentação.
 
-Para adicionar "Suporte de Vida" no futuro, basta criar uma nova classe em
-`sistemas_bordo.py` que implemente `ObservadorNucleo` e registrá-la na `Nave`;
-nenhuma linha de `NucleoEnergia` precisa mudar.
+**Evidência da extensibilidade:** o `SuporteDeVida` — justamente a demanda futura
+que o Tech Lead cita no ticket — foi implementado depois, em um commit próprio
+que **não altera `nucleo.py`**. Bastou criar a classe em `sistemas_bordo.py` e
+inscrevê-la na `Nave`. Dá para conferir no histórico:
+
+```bash
+git log --oneline -- sistema/nucleo.py
+git show --stat HEAD
+```
 
 ### Ticket 2 — Comportamento Dinâmico da Tripulação → **Strategy**
 
@@ -73,7 +79,7 @@ labtime-desafio-estagio/
 | Arquivo | Padrão | Papel |
 |---|---|---|
 | `sistema/nucleo.py` | Observer | `ObservadorNucleo` = interface Observer; `NucleoEnergia` = Subject |
-| `sistema/sistemas_bordo.py` | Observer | `SistemaEscudos`, `SistemaLuzes`, `PainelNavegacao` = observadores concretos |
+| `sistema/sistemas_bordo.py` | Observer | `SistemaEscudos`, `SistemaLuzes`, `PainelNavegacao`, `SuporteDeVida` = observadores concretos |
 | `sistema/tripulante.py` | Strategy | `FuncaoStrategy` = interface da estratégia; `OperadorCanhoes`, `MecanicoMotor`, `MedicoDeBordo` = estratégias concretas; `Tripulante` = Context |
 | `sistema/armas.py` | Strategy + Decorator | `Arma` = interface comum (estratégia); `LaserContinuo`, `EnxameDeMisseis` = estratégias concretas (armas base); `ModificadorArma` = Decorator base; `DanoDeFogo`, `PerfuracaoDeBlindagem` = decoradores concretos |
 | `sistema/nave.py` | — | `Nave` = fachada que integra os três sistemas acima, usada pelo console |

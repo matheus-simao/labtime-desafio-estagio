@@ -399,7 +399,10 @@ def cmd_trocar_funcao(nave: Nave, args: list[str]) -> None:
 
     funcao_anterior = tripulante.funcao_atual
     tripulante.trocar_funcao(FUNCOES_DISPONIVEIS[funcao_chave]())
-    ui.sucesso(f"{tripulante.nome}: {funcao_anterior} → {tripulante.funcao_atual} (mesmo objeto em memória)")
+    ui.sucesso(
+        f"{tripulante.nome}: {funcao_anterior} → {tripulante.funcao_atual} "
+        "(mesmo objeto em memória)"
+    )
 
 
 def cmd_trabalhar(nave: Nave, args: list[str]) -> None:
@@ -590,7 +593,10 @@ def executar_comando(nave: Nave, linha: str) -> bool:
         if resolucao.ambiguos:
             ui.erro(f"'{entrada}' pode ser vários comandos: {', '.join(resolucao.ambiguos)}")
         elif resolucao.sugestoes:
-            ui.erro(f"Comando '{entrada}' não existe. Você quis dizer: {', '.join(resolucao.sugestoes)}?")
+            ui.erro(
+                f"Comando '{entrada}' não existe. "
+                f"Você quis dizer: {', '.join(resolucao.sugestoes)}?"
+            )
         else:
             ui.erro(f"Comando '{entrada}' não existe. Digite 'ajuda' para ver a lista.")
         return True

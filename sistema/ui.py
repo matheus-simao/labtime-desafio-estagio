@@ -16,6 +16,10 @@ def _habilitar_vt_windows() -> bool:
     """
     Habilita o processamento de sequencias ANSI no console do Windows.
 
+    Trata apenas as falhas esperadas ao sondar a API do sistema: `windll` nao
+    existe fora do Windows (AttributeError) e o console pode recusar a
+    chamada (OSError). Qualquer outro erro deve subir normalmente.
+
     Returns:
         True se o modo de terminal virtual foi habilitado com sucesso.
     """
@@ -28,7 +32,7 @@ def _habilitar_vt_windows() -> bool:
         if not kernel32.GetConsoleMode(handle, ctypes.byref(modo)):
             return False
         return bool(kernel32.SetConsoleMode(handle, modo.value | 0x0004))
-    except Exception:
+    except (AttributeError, OSError):
         return False
 
 
@@ -70,12 +74,16 @@ def preparar_saida() -> None:
     """
     Garante que a saida padrao aceite os caracteres acentuados e de caixa.
 
+    Se a saida nao suportar reconfiguracao - por exemplo quando redirecionada
+    para um objeto que nao e um TextIOWrapper - o programa segue com a
+    codificacao vigente em vez de falhar.
+
     Returns:
         None.
     """
     try:
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
-    except Exception:
+    except (AttributeError, OSError, ValueError):
         pass
 
 

@@ -129,7 +129,8 @@ class NucleoEnergia:
             None.
         """
         limiar = self._energia_maxima * self.LIMIAR_CRITICO_PERCENTUAL
-        novo_estado = EstadoNucleo.CRITICO if self._energia_atual <= limiar else EstadoNucleo.NORMAL
+        esgotando = self._energia_atual <= limiar
+        novo_estado = EstadoNucleo.CRITICO if esgotando else EstadoNucleo.NORMAL
 
         if novo_estado != self._estado:
             self._estado = novo_estado

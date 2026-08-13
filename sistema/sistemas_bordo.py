@@ -43,7 +43,11 @@ class PainelNavegacao(ObservadorNucleo):
     def notificar(self, estado: EstadoNucleo, energia_atual: int) -> None:
         """Exibe ou remove o alerta de emergencia no painel."""
         if estado == EstadoNucleo.CRITICO:
-            ui.evento("Painel", f"ALERTA DE EMERGÊNCIA exibido (energia: {energia_atual}).", critico=True)
+            ui.evento(
+                "Painel",
+                f"ALERTA DE EMERGÊNCIA exibido (energia: {energia_atual}).",
+                critico=True,
+            )
         else:
             ui.evento("Painel", f"Alerta removido (energia: {energia_atual}).", critico=False)
 
@@ -60,6 +64,10 @@ class SuporteDeVida(ObservadorNucleo):
     def notificar(self, estado: EstadoNucleo, energia_atual: int) -> None:
         """Alterna o suporte de vida entre modo de reserva e operacao plena."""
         if estado == EstadoNucleo.CRITICO:
-            ui.evento("Suporte de Vida", "Reduzido ao MÍNIMO: reserva de oxigênio ativada.", critico=True)
+            ui.evento(
+                "Suporte de Vida",
+                "Reduzido ao MÍNIMO: reserva de oxigênio ativada.",
+                critico=True,
+            )
         else:
             ui.evento("Suporte de Vida", "Restabelecido em operação plena.", critico=False)

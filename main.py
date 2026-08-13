@@ -293,7 +293,7 @@ def _linha_energia(nucleo: NucleoEnergia) -> str:
 
 
 def cmd_status(nave: Nave, args: list[str]) -> None:
-    """Imprime o painel com energia do núcleo, tripulação e arma equipada."""
+    """Imprime o painel com energia do nucleo, tripulacao e arma equipada."""
     nucleo = nave.nucleo
 
     ui.titulo_painel("STATUS DA NAVE")

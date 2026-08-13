@@ -20,7 +20,7 @@ from typing import Callable
 from sistema import ui
 from sistema.armas import ARMAS_DISPONIVEIS, MODIFICADORES_DISPONIVEIS
 from sistema.nave import Nave, criar_nave_padrao
-from sistema.nucleo import EstadoNucleo
+from sistema.nucleo import EstadoNucleo, NucleoEnergia
 from sistema.tripulante import FUNCOES_DISPONIVEIS, Tripulante
 from sistema.ui import Cor
 
@@ -273,15 +273,31 @@ def cmd_ajuda(nave: Nave, args: list[str]) -> None:
     )
 
 
+def _linha_energia(nucleo: NucleoEnergia) -> str:
+    """
+    Monta a leitura visual do nucleo: barra, valor e estado.
+
+    Usada tanto no painel de status quanto no retorno dos comandos que
+    alteram a energia, para que as duas leituras nunca divirjam.
+
+    Args:
+        nucleo: nucleo de energia a ser representado.
+
+    Returns:
+        Linha colorida com a barra, a energia atual e o estado.
+    """
+    barra = ui.barra_energia(nucleo.energia_atual, nucleo.energia_maxima)
+    energia = f"{nucleo.energia_atual}/{nucleo.energia_maxima}".rjust(7)
+    cor_estado = Cor.VERMELHO if nucleo.estado == EstadoNucleo.CRITICO else Cor.VERDE
+    return f"{barra} {energia}  {ui.colorir(nucleo.estado.value, cor_estado)}"
+
+
 def cmd_status(nave: Nave, args: list[str]) -> None:
     """Imprime o painel com energia do núcleo, tripulação e arma equipada."""
     nucleo = nave.nucleo
-    barra = ui.barra_energia(nucleo.energia_atual, nucleo.energia_maxima)
-    cor_estado = Cor.VERMELHO if nucleo.estado == EstadoNucleo.CRITICO else Cor.VERDE
-    energia = f"{nucleo.energia_atual}/{nucleo.energia_maxima}".rjust(7)
 
     ui.titulo_painel("STATUS DA NAVE")
-    ui.linha_painel(f"{'Núcleo'.ljust(12)} {barra} {energia}  {ui.colorir(nucleo.estado.value, cor_estado)}")
+    ui.linha_painel(f"{'Núcleo'.ljust(12)} {_linha_energia(nucleo)}")
 
     arma = nave.arma_atual.descricao if nave.arma_atual else ui.colorir("nenhuma", Cor.FRACO)
     ui.linha_painel(f"{'Armamento'.ljust(12)} {arma}")
@@ -306,7 +322,8 @@ def cmd_tomar_dano(nave: Nave, args: list[str]) -> None:
     if perdido == 0:
         ui.aviso("O núcleo já está sem energia. Nada mudou.")
         return
-    ui.sucesso(f"Núcleo perdeu {perdido} de energia. Energia atual: {nave.nucleo.energia_atual}")
+    ui.sucesso(f"Núcleo perdeu {perdido} de energia.")
+    print(f"  {_linha_energia(nave.nucleo)}")
 
 
 def cmd_restaurar_energia(nave: Nave, args: list[str]) -> None:
@@ -320,7 +337,8 @@ def cmd_restaurar_energia(nave: Nave, args: list[str]) -> None:
     if ganho == 0:
         ui.aviso("O núcleo já está com energia máxima. Nada mudou.")
         return
-    ui.sucesso(f"Núcleo recuperou {ganho} de energia. Energia atual: {nave.nucleo.energia_atual}")
+    ui.sucesso(f"Núcleo recuperou {ganho} de energia.")
+    print(f"  {_linha_energia(nave.nucleo)}")
 
 
 def cmd_add_tripulante(nave: Nave, args: list[str]) -> None:

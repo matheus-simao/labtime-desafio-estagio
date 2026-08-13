@@ -208,6 +208,10 @@ python -m pydoc sistema.nucleo
 python -m pydoc -w sistema.nucleo
 ```
 
+Como no comando de execução, use `py` ou `python3` se `python` não estiver no
+PATH, e rode a partir da raiz do repositório para que o pacote `sistema` seja
+encontrado.
+
 ### Observação sobre a saída no terminal
 
 O console usa cores ANSI e caracteres de caixa para facilitar a leitura. As cores

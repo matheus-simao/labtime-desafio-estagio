@@ -1,3 +1,6 @@
 __pycache__/
 *.pyc
 .claude/
+
+# Documentacao HTML gerada por `python -m pydoc -w`
+*.html

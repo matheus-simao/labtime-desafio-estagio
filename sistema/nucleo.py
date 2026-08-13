@@ -94,24 +94,6 @@ class NucleoEnergia:
         """
         self._observadores.append(observador)
 
-    def remover_observador(self, observador: ObservadorNucleo) -> None:
-        """
-        Cancela a inscricao de um observador.
-
-        Contraparte de adicionar_observador: o padrao Observer preve tanto a
-        inscricao quanto o cancelamento. A demonstracao do console nao chega a
-        desinscrever ninguem, mas omitir este metodo deixaria o Subject com um
-        contrato pela metade.
-
-        Args:
-            observador: instancia previamente adicionada.
-
-        Returns:
-            None.
-        """
-        if observador in self._observadores:
-            self._observadores.remove(observador)
-
     def tomar_dano(self, valor: int) -> None:
         """
         Reduz a energia do nucleo em razao de dano sofrido em combate.

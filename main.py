@@ -324,6 +324,8 @@ def cmd_tomar_dano(nave: Nave, args: list[str]) -> None:
         return
     ui.sucesso(f"Núcleo perdeu {perdido} de energia.")
     print(f"  {_linha_energia(nave.nucleo)}")
+    if nave.nucleo.energia_atual == 0:
+        ui.aviso("Núcleo esgotado — a nave está à deriva. Use 'restaurar_energia' para religar.")
 
 
 def cmd_restaurar_energia(nave: Nave, args: list[str]) -> None:

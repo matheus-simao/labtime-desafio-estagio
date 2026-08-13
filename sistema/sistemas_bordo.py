@@ -18,22 +18,11 @@ from sistema.nucleo import EstadoNucleo, ObservadorNucleo
 class SistemaEscudos(ObservadorNucleo):
     """Observador concreto: muda o foco de defesa quando o nucleo entra em crise."""
 
-    def __init__(self) -> None:
-        """Inicia os escudos com o foco de defesa padrao."""
-        self._foco_atual = "PADRÃO"
-
-    @property
-    def foco_atual(self) -> str:
-        """Retorna o foco de defesa em vigor nos escudos."""
-        return self._foco_atual
-
     def notificar(self, estado: EstadoNucleo, energia_atual: int) -> None:
         """Ajusta o foco dos escudos de acordo com o estado do nucleo."""
         if estado == EstadoNucleo.CRITICO:
-            self._foco_atual = "EMERGÊNCIA"
             ui.evento("Escudos", "Foco de defesa alterado para EMERGÊNCIA.", critico=True)
         else:
-            self._foco_atual = "PADRÃO"
             ui.evento("Escudos", "Foco de defesa restaurado para PADRÃO.", critico=False)
 
 

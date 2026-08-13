@@ -96,7 +96,12 @@ class NucleoEnergia:
 
     def remover_observador(self, observador: ObservadorNucleo) -> None:
         """
-        Remove um observador previamente inscrito.
+        Cancela a inscricao de um observador.
+
+        Contraparte de adicionar_observador: o padrao Observer preve tanto a
+        inscricao quanto o cancelamento. A demonstracao do console nao chega a
+        desinscrever ninguem, mas omitir este metodo deixaria o Subject com um
+        contrato pela metade.
 
         Args:
             observador: instancia previamente adicionada.

@@ -62,7 +62,6 @@ class Cor:
     VERMELHO = "\033[31m" if _COR_ATIVA else ""
     VERDE = "\033[32m" if _COR_ATIVA else ""
     AMARELO = "\033[33m" if _COR_ATIVA else ""
-    AZUL = "\033[34m" if _COR_ATIVA else ""
     MAGENTA = "\033[35m" if _COR_ATIVA else ""
     CIANO = "\033[36m" if _COR_ATIVA else ""
 

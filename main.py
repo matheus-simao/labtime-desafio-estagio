@@ -165,6 +165,67 @@ def _pedir_opcao(pergunta: str, opcoes: dict, rotulos: list[str] | None = None) 
         ui.erro(f"Opção inválida. Use: {exibidas} (ou tecle Enter para cancelar).")
 
 
+def _resolver_numero(args: list[str], pergunta: str, exemplo: str) -> int | None:
+    """
+    Obtem um numero do argumento digitado ou, na falta dele, perguntando.
+
+    Concentra o tratamento de erro comum aos comandos que recebem um valor
+    numerico, para que cada um deles cuide apenas do seu efeito no nucleo.
+
+    Args:
+        args: argumentos que vieram junto ao comando.
+        pergunta: texto usado quando o valor precisa ser solicitado.
+        exemplo: uso correto, exibido caso o argumento nao seja numerico.
+
+    Returns:
+        O numero informado, ou None se invalido ou cancelado - nesse caso a
+        mensagem ao usuario ja foi emitida.
+    """
+    if not args:
+        valor = _pedir_numero(pergunta)
+        if valor is None:
+            ui.aviso("Comando cancelado.")
+        return valor
+
+    valor = _converter_inteiro(args[0])
+    if valor is None:
+        ui.erro(f"'{args[0]}' não é um número válido. Exemplo: {exemplo}")
+    return valor
+
+
+def _resolver_opcao(
+    args: list[str], indice: int, opcoes: dict, rotulo: str, pergunta: str
+) -> str | None:
+    """
+    Obtem uma opcao valida do argumento digitado ou, na falta dele, perguntando.
+
+    Serve a todos os comandos que escolhem um item de um catalogo: funcoes de
+    tripulante, armas base e modificadores.
+
+    Args:
+        args: argumentos que vieram junto ao comando.
+        indice: posicao esperada da opcao dentro de args.
+        opcoes: dicionario cujas chaves sao as opcoes aceitas.
+        rotulo: como o tipo de opcao e chamado na mensagem de erro.
+        pergunta: texto usado quando a opcao precisa ser solicitada.
+
+    Returns:
+        A chave escolhida, ou None se invalida ou cancelada - nesse caso a
+        mensagem ao usuario ja foi emitida.
+    """
+    if len(args) > indice:
+        bruto = args[indice]
+        if bruto.lower() not in opcoes:
+            ui.erro(f"{rotulo} '{bruto}' não existe. Opções: {', '.join(opcoes)}")
+            return None
+        return bruto.lower()
+
+    escolha = _pedir_opcao(pergunta, opcoes)
+    if escolha is None:
+        ui.aviso("Comando cancelado.")
+    return escolha
+
+
 def _formatar_assinatura(assinatura: str) -> tuple[str, int]:
     """
     Colore o nome do comando e seus argumentos de forma distinta.
@@ -236,12 +297,8 @@ def cmd_status(nave: Nave, args: list[str]) -> None:
 
 def cmd_tomar_dano(nave: Nave, args: list[str]) -> None:
     """Aplica dano/reducao de energia ao nucleo, perguntando o valor se necessario."""
-    valor = _converter_inteiro(args[0]) if args else _pedir_numero("Quanto de dano?")
+    valor = _resolver_numero(args, "Quanto de dano?", "tomar_dano 40")
     if valor is None:
-        if args:
-            ui.erro(f"'{args[0]}' não é um número válido. Exemplo: tomar_dano 40")
-        else:
-            ui.aviso("Comando cancelado.")
         return
     antes = nave.nucleo.energia_atual
     nave.nucleo.tomar_dano(valor)
@@ -254,12 +311,8 @@ def cmd_tomar_dano(nave: Nave, args: list[str]) -> None:
 
 def cmd_restaurar_energia(nave: Nave, args: list[str]) -> None:
     """Restaura energia do nucleo, perguntando o valor se necessario."""
-    valor = _converter_inteiro(args[0]) if args else _pedir_numero("Quanta energia restaurar?")
+    valor = _resolver_numero(args, "Quanta energia restaurar?", "restaurar_energia 30")
     if valor is None:
-        if args:
-            ui.erro(f"'{args[0]}' não é um número válido. Exemplo: restaurar_energia 30")
-        else:
-            ui.aviso("Comando cancelado.")
         return
     antes = nave.nucleo.energia_atual
     nave.nucleo.restaurar_energia(valor)
@@ -277,15 +330,9 @@ def cmd_add_tripulante(nave: Nave, args: list[str]) -> None:
         ui.aviso("Comando cancelado.")
         return
 
-    funcao_chave = args[1].lower() if len(args) > 1 else None
-    if funcao_chave is not None and funcao_chave not in FUNCOES_DISPONIVEIS:
-        ui.erro(f"Função '{args[1]}' não existe. Funções: {', '.join(FUNCOES_DISPONIVEIS)}")
-        return
+    funcao_chave = _resolver_opcao(args, 1, FUNCOES_DISPONIVEIS, "Função", "Qual função?")
     if funcao_chave is None:
-        funcao_chave = _pedir_opcao("Qual função?", FUNCOES_DISPONIVEIS)
-        if funcao_chave is None:
-            ui.aviso("Comando cancelado.")
-            return
+        return
 
     funcao = FUNCOES_DISPONIVEIS[funcao_chave]()
     nave.adicionar_tripulante(Tripulante(nome, funcao))
@@ -326,15 +373,9 @@ def cmd_trocar_funcao(nave: Nave, args: list[str]) -> None:
     if tripulante is None:
         return
 
-    funcao_chave = args[1].lower() if len(args) > 1 else None
-    if funcao_chave is not None and funcao_chave not in FUNCOES_DISPONIVEIS:
-        ui.erro(f"Função '{args[1]}' não existe. Funções: {', '.join(FUNCOES_DISPONIVEIS)}")
-        return
+    funcao_chave = _resolver_opcao(args, 1, FUNCOES_DISPONIVEIS, "Função", "Nova função?")
     if funcao_chave is None:
-        funcao_chave = _pedir_opcao("Nova função?", FUNCOES_DISPONIVEIS)
-        if funcao_chave is None:
-            ui.aviso("Comando cancelado.")
-            return
+        return
 
     funcao_anterior = tripulante.funcao_atual
     tripulante.trocar_funcao(FUNCOES_DISPONIVEIS[funcao_chave]())
@@ -351,12 +392,8 @@ def cmd_trabalhar(nave: Nave, args: list[str]) -> None:
 
 def cmd_equipar_arma(nave: Nave, args: list[str]) -> None:
     """Equipa uma arma base nova na nave, descartando modificadores anteriores."""
-    if args and args[0].lower() not in ARMAS_DISPONIVEIS:
-        ui.erro(f"Arma '{args[0]}' não existe. Tipos: {', '.join(ARMAS_DISPONIVEIS)}")
-        return
-    chave = args[0].lower() if args else _pedir_opcao("Qual arma?", ARMAS_DISPONIVEIS)
+    chave = _resolver_opcao(args, 0, ARMAS_DISPONIVEIS, "Arma", "Qual arma?")
     if chave is None:
-        ui.aviso("Comando cancelado.")
         return
     nave.equipar_arma(ARMAS_DISPONIVEIS[chave]())
     ui.sucesso(f"Arma equipada: {nave.arma_atual.descricao}")
@@ -367,12 +404,8 @@ def cmd_adicionar_modificador(nave: Nave, args: list[str]) -> None:
     if nave.arma_atual is None:
         ui.erro("Nenhuma arma equipada. Use 'equipar_arma' primeiro.")
         return
-    if args and args[0].lower() not in MODIFICADORES_DISPONIVEIS:
-        ui.erro(f"Modificador '{args[0]}' não existe. Tipos: {', '.join(MODIFICADORES_DISPONIVEIS)}")
-        return
-    chave = args[0].lower() if args else _pedir_opcao("Qual modificador?", MODIFICADORES_DISPONIVEIS)
+    chave = _resolver_opcao(args, 0, MODIFICADORES_DISPONIVEIS, "Modificador", "Qual modificador?")
     if chave is None:
-        ui.aviso("Comando cancelado.")
         return
     nave.arma_atual = MODIFICADORES_DISPONIVEIS[chave](nave.arma_atual)
     ui.sucesso(f"Pilha de disparo: {nave.arma_atual.descricao}")
@@ -387,8 +420,12 @@ def cmd_atirar(nave: Nave, args: list[str]) -> None:
 
 
 def cmd_sair(nave: Nave, args: list[str]) -> None:
-    """Encerra o console. O desligamento em si e tratado pelo loop principal."""
-    return
+    """
+    Encerra o console.
+
+    Nao executa nenhuma acao: quem interrompe o loop principal e a flag
+    `encerra` do proprio comando, lida em executar_comando.
+    """
 
 
 COMANDOS: tuple[Comando, ...] = (

@@ -6,7 +6,7 @@ A Nave e apenas o ponto de fachada usado pelo console para acionar cada
 sistema; ela nao contem a logica interna de nenhum dos padroes.
 """
 
-from sistema.armas import Arma, LaserContinuo
+from sistema.armas import Arma, LaserContinuo, ModificadorArma
 from sistema.nucleo import NucleoEnergia
 from sistema.sistemas_bordo import PainelNavegacao, SistemaEscudos, SistemaLuzes, SuporteDeVida
 from sistema.tripulante import MecanicoMotor, OperadorCanhoes, Tripulante
@@ -31,7 +31,24 @@ class Nave:
         self.nucleo.adicionar_observador(SuporteDeVida())
 
         self.tripulantes: dict[str, Tripulante] = {}
-        self.arma_atual: Arma | None = None
+        self._arma_atual: Arma | None = None
+
+    @property
+    def arma_atual(self) -> Arma | None:
+        """Retorna a arma equipada, ja com os modificadores empilhados."""
+        return self._arma_atual
+
+    def tem_tripulante(self, nome: str) -> bool:
+        """
+        Informa se ja existe um tripulante com o nome dado.
+
+        Args:
+            nome: nome procurado, sem diferenciar maiusculas de minusculas.
+
+        Returns:
+            True se o tripulante ja estiver a bordo.
+        """
+        return nome.lower() in self.tripulantes
 
     def adicionar_tripulante(self, tripulante: Tripulante) -> None:
         """
@@ -49,13 +66,36 @@ class Nave:
         """
         Equipa a arma que sera usada nos proximos disparos.
 
+        Substitui a arma anterior por inteiro: os modificadores que estavam
+        empilhados sobre ela sao descartados junto.
+
         Args:
             arma: instancia de Arma (base ou ja decorada com modificadores).
 
         Returns:
             None.
         """
-        self.arma_atual = arma
+        self._arma_atual = arma
+
+    def adicionar_modificador(self, modificador: type[ModificadorArma]) -> None:
+        """
+        Empilha um modificador sobre a arma equipada.
+
+        A Nave e quem monta a pilha de disparo: o console apenas escolhe qual
+        decorador aplicar, sem manipular a arma diretamente.
+
+        Args:
+            modificador: classe do decorador a ser aplicado.
+
+        Returns:
+            None.
+
+        Raises:
+            ValueError: se nenhuma arma estiver equipada.
+        """
+        if self._arma_atual is None:
+            raise ValueError("Nenhuma arma equipada. Use 'equipar_arma' primeiro.")
+        self._arma_atual = modificador(self._arma_atual)
 
     def atirar(self) -> str:
         """
@@ -68,9 +108,9 @@ class Nave:
         Raises:
             ValueError: se nenhuma arma estiver equipada.
         """
-        if self.arma_atual is None:
+        if self._arma_atual is None:
             raise ValueError("Nenhuma arma equipada. Use 'equipar_arma' primeiro.")
-        return self.arma_atual.atirar()
+        return self._arma_atual.atirar()
 
 
 def criar_nave_padrao() -> Nave:

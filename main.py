@@ -18,7 +18,7 @@ from dataclasses import dataclass, field
 from typing import Callable
 
 from sistema import ui
-from sistema.armas import ARMAS_DISPONIVEIS, MODIFICADORES_DISPONIVEIS
+from sistema.armas import ARMAS_DISPONIVEIS, MODIFICADORES_DISPONIVEIS, ModificadorArma
 from sistema.nave import Nave, criar_nave_padrao
 from sistema.nucleo import EstadoNucleo, NucleoEnergia
 from sistema.tripulante import FUNCOES_DISPONIVEIS, Tripulante
@@ -350,6 +350,14 @@ def cmd_add_tripulante(nave: Nave, args: list[str]) -> None:
         ui.aviso("Comando cancelado.")
         return
 
+    if nave.tem_tripulante(nome):
+        existente = nave.tripulantes[nome.lower()]
+        ui.erro(
+            f"{existente.nome} já está a bordo como {existente.funcao_atual}. "
+            "Use 'trocar_funcao' para mudar a função — assim o mesmo tripulante é preservado."
+        )
+        return
+
     funcao_chave = _resolver_opcao(args, 1, FUNCOES_DISPONIVEIS, "Função", "Qual função?")
     if funcao_chave is None:
         return
@@ -418,8 +426,13 @@ def cmd_equipar_arma(nave: Nave, args: list[str]) -> None:
     chave = _resolver_opcao(args, 0, ARMAS_DISPONIVEIS, "Arma", "Qual arma?")
     if chave is None:
         return
+
+    tinha_pilha = isinstance(nave.arma_atual, ModificadorArma)
+    descartada = nave.arma_atual.descricao if tinha_pilha else None
     nave.equipar_arma(ARMAS_DISPONIVEIS[chave]())
     ui.sucesso(f"Arma equipada: {nave.arma_atual.descricao}")
+    if descartada is not None:
+        ui.aviso(f"A pilha anterior foi descartada junto com a arma: {descartada}")
 
 
 def cmd_adicionar_modificador(nave: Nave, args: list[str]) -> None:
@@ -430,7 +443,7 @@ def cmd_adicionar_modificador(nave: Nave, args: list[str]) -> None:
     chave = _resolver_opcao(args, 0, MODIFICADORES_DISPONIVEIS, "Modificador", "Qual modificador?")
     if chave is None:
         return
-    nave.arma_atual = MODIFICADORES_DISPONIVEIS[chave](nave.arma_atual)
+    nave.adicionar_modificador(MODIFICADORES_DISPONIVEIS[chave])
     ui.sucesso(f"Pilha de disparo: {nave.arma_atual.descricao}")
 
 

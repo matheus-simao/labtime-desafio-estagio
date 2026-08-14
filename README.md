@@ -62,6 +62,19 @@ Duas restrições, dois padrões trabalhando juntos, ambos sob a mesma interface
   adicionando um efeito e repassando a chamada adiante. Isso evita a explosão
   combinatória de classes como `LaserComFogoEPerfuracao`.
 
+### Padrões considerados e descartados
+
+O catálogo trazia outros candidatos plausíveis para cada ticket. Registro aqui
+por que foram deixados de fora, já que a escolha é parte do problema:
+
+| Ticket | Alternativa avaliada | Motivo da recusa |
+|---|---|---|
+| 1 | **Mediator** | Centralizaria a coordenação, mas o próprio mediador precisaria conhecer Escudos, Luzes e Painéis — a restrição pede que uma reação nova não obrigue a alterar nada, e o Mediator apenas mudaria de lugar o acoplamento em vez de eliminá-lo. |
+| 1 | **Chain of Responsibility** | Encadeia candidatos até que **um** trate a requisição. Aqui todos os sistemas devem reagir simultaneamente, que é difusão, não repasse. |
+| 2 | **State** | Muito próximo do Strategy na forma, mas no State os estados costumam decidir as próprias transições e conhecer uns aos outros. Aqui quem escolhe a função é o operador, de fora, e as funções são independentes entre si — a definição de Strategy. |
+| 3 | **Abstract Factory** | Exigiria uma fábrica por combinação de efeitos, que é exatamente a explosão de classes proibida pelo ticket. |
+| 3 | **Builder** | Monta um objeto complexo por etapas, mas entrega um produto pronto. O ticket pede acoplar efeitos a uma arma **já equipada**, em tempo de execução. |
+
 ## 2. Papéis do Código
 
 ```
@@ -128,6 +141,34 @@ nave › adicionar_modificador perfuracao  # empilha o 2º sobre o 1º
 nave › atirar
 nave › sair
 ```
+
+### Amostra da saída
+
+Trecho real de uma execução, exercitando os três tickets em sequência:
+
+```
+nave › tomar_dano 80
+  [Escudos] Foco de defesa alterado para EMERGÊNCIA.
+  [Luzes] Luzes das salas APAGADAS para poupar energia.
+  [Painel] ALERTA DE EMERGÊNCIA exibido (energia: 20).
+  [Suporte de Vida] Reduzido ao MÍNIMO: reserva de oxigênio ativada.
+✓ Núcleo perdeu 80 de energia.
+  ████░░░░░░░░░░░░░░░░  20/100  CRÍTICO
+
+nave › trocar_funcao Ana mecanico
+✓ Ana: operador de canhões → mecânico do motor (mesmo objeto em memória)
+
+nave › trabalhar Ana
+  » Ana ajusta as válvulas e repara o motor da nave.
+
+nave › adicionar_modificador fogo
+✓ Pilha de disparo: Laser Contínuo + Fogo
+
+nave › atirar
+  ◈ Laser Contínuo disparado (dano base: 10) + Dano de Fogo (queimadura ao longo do tempo)
+```
+
+Os quatro sistemas reagem sozinhos ao dano — o núcleo não chama nenhum deles.
 
 ### Três formas de digitar cada comando
 

@@ -46,6 +46,10 @@ de função é apenas trocar o objeto guardado (`trocar_funcao`) — o `Tripulan
 nunca é destruído, e a classe `Tripulante` nunca precisa saber o que cada função
 faz internamente.
 
+O console reforça a restrição: `add_tripulante` **recusa** um nome que já esteja a
+bordo e aponta para `trocar_funcao`. Assim não existe no programa nenhum caminho
+que destrua e recrie um NPC apenas para mudar sua função.
+
 ### Ticket 3 — Armamento Modular e Modificadores Piratas → **Strategy + Decorator**
 
 **Restrição:** a Nave só pode emitir o comando genérico "atirar" sem conhecer a
@@ -61,6 +65,17 @@ Duas restrições, dois padrões trabalhando juntos, ambos sob a mesma interface
   `PerfuracaoDeBlindagem` embrulham a arma atual (que pode já estar decorada),
   adicionando um efeito e repassando a chamada adiante. Isso evita a explosão
   combinatória de classes como `LaserComFogoEPerfuracao`.
+
+Quem monta a pilha é a própria `Nave` (`adicionar_modificador`): o console apenas
+escolhe qual decorador aplicar, sem manipular a arma por fora.
+
+**Limitação assumida:** o encadeamento do Decorator é unidirecional. Cada
+modificador guarda a arma que envolve no momento em que é construído, formando um
+aninhamento (`Perfuração → Fogo → Laser`) em que só a camada externa é
+referenciada. Remover um efeito do meio exigiria reconstruir tudo acima dele — por
+isso a pilha é descartada ao reequipar, e o console avisa o que foi perdido. Um
+desenho alternativo, com uma lista de efeitos aplicados no disparo, permitiria a
+remoção, mas deixaria de ser Decorator — e o ticket pede empilhar, não desempilhar.
 
 ### Padrões considerados e descartados
 

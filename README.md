@@ -28,9 +28,10 @@ que **não altera `nucleo.py`**. Bastou criar a classe em `sistemas_bordo.py` e
 inscrevê-la na `Nave`. Dá para conferir no histórico:
 
 ```bash
-git log --oneline -- sistema/nucleo.py
-git show --stat HEAD
+git show --stat e756fbb
 ```
+
+O commit toca `sistemas_bordo.py`, `nave.py` e o README — `nucleo.py` não aparece.
 
 ### Ticket 2 — Comportamento Dinâmico da Tripulação → **Strategy**
 
@@ -99,6 +100,17 @@ python main.py
 No Windows, se `python` não estiver no PATH, use `py main.py` ou `python3 main.py`.
 O programa precisa ser executado a partir da raiz do repositório.
 
+### Estado inicial
+
+A nave é montada por `criar_nave_padrao()` (em `sistema/nave.py`) já com dois
+tripulantes a bordo — **Ana** como operadora de canhões e **Bruno** como mecânico
+— e o Laser Contínuo equipado. O Ticket 2 pede para trocar a função de um "NPC
+vivo" e mandá-lo trabalhar, então a tripulação precisa preexistir; `trabalhar` e
+`atirar` respondem já no primeiro comando, sem impedir que `add_tripulante` e
+`equipar_arma` sejam exercitados.
+
+### Sessão de exemplo
+
 Ao iniciar, o console mostra o painel da nave e um resumo dos comandos; a lista
 detalhada fica em `ajuda`. Uma sessão que exercita os três tickets:
 
@@ -116,14 +128,6 @@ nave › adicionar_modificador perfuracao  # empilha o 2º sobre o 1º
 nave › atirar
 nave › sair
 ```
-
-### Estado inicial
-
-Para que a demonstração comece utilizável, a nave é montada por
-`criar_nave_padrao()` (em `sistema/nave.py`) já com dois tripulantes a bordo
-(Ana como operadora de canhões, Bruno como mecânico) e o Laser Contínuo
-equipado. Assim `trabalhar` e `atirar` respondem já no primeiro comando, sem
-deixar de permitir que `add_tripulante` e `equipar_arma` sejam exercitados.
 
 ### Três formas de digitar cada comando
 

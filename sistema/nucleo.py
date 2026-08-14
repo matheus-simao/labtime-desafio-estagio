@@ -59,6 +59,8 @@ class NucleoEnergia:
 
     def __init__(self, energia_maxima: int = 100) -> None:
         """
+        Cria o nucleo com carga cheia e sem observadores inscritos.
+
         Args:
             energia_maxima: capacidade maxima de energia do nucleo.
         """

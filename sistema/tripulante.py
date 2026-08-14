@@ -81,6 +81,8 @@ class Tripulante:
 
     def __init__(self, nome: str, funcao_inicial: FuncaoStrategy) -> None:
         """
+        Cria o tripulante ja associado a uma estrategia de funcao.
+
         Args:
             nome: nome do tripulante.
             funcao_inicial: estrategia de funcao com a qual o tripulante comeca.

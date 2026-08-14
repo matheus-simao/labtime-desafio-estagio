@@ -84,6 +84,8 @@ class ModificadorArma(Arma):
 
     def __init__(self, arma_decorada: Arma) -> None:
         """
+        Envolve a arma recebida, que pode ser base ou ja decorada.
+
         Args:
             arma_decorada: instancia de Arma a ser decorada com um efeito extra.
         """

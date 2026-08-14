@@ -159,31 +159,28 @@ nave › sair
 
 ### Amostra da saída
 
-Trecho real de uma execução, exercitando os três tickets em sequência:
+Ao abrir, o console mostra o estado da nave e o resumo dos comandos:
 
-```
-nave › tomar_dano 80
-  [Escudos] Foco de defesa alterado para EMERGÊNCIA.
-  [Luzes] Luzes das salas APAGADAS para poupar energia.
-  [Painel] ALERTA DE EMERGÊNCIA exibido (energia: 20).
-  [Suporte de Vida] Reduzido ao MÍNIMO: reserva de oxigênio ativada.
-✓ Núcleo perdeu 80 de energia.
-  ████░░░░░░░░░░░░░░░░  20/100  CRÍTICO
+![Tela inicial do console: banner do sistema, painel de status com a barra de
+energia cheia em 100/100 NORMAL, o Laser Contínuo equipado, os tripulantes Ana e
+Bruno com suas funções, e o resumo dos comandos agrupados por
+sistema.](docs/console-inicial.png)
 
-nave › trocar_funcao Ana mecanico
-✓ Ana: operador de canhões → mecânico do motor (mesmo objeto em memória)
+Uma sessão real exercitando os tickets — repare que o dano derruba a energia
+abaixo do limiar e **os quatro sistemas de bordo reagem sozinhos**, sem que o
+núcleo chame nenhum deles:
 
-nave › trabalhar Ana
-  » Ana ajusta as válvulas e repara o motor da nave.
+![Sessão no console: o comando tomar_dano com 81 de dano faz Escudos, Luzes,
+Painel e Suporte de Vida emitirem alertas em vermelho; a barra de energia fica
+vermelha em 19/100 CRÍTICO; em seguida trocar_funcao muda Ana de operadora de
+canhões para mecânica do motor, confirmando que é o mesmo objeto em memória; por
+fim atirar dispara o Laser Contínuo.](docs/console-sessao.png)
 
-nave › adicionar_modificador fogo
-✓ Pilha de disparo: Laser Contínuo + Fogo
+O print também mostra o modo guiado: quando o comando é digitado sem argumentos,
+o console pergunta o que falta e lista as opções válidas.
 
-nave › atirar
-  ◈ Laser Contínuo disparado (dano base: 10) + Dano de Fogo (queimadura ao longo do tempo)
-```
-
-Os quatro sistemas reagem sozinhos ao dano — o núcleo não chama nenhum deles.
+Para uma amostra em texto — útil para copiar e colar — veja a
+[sessão de exemplo](#sessão-de-exemplo) acima.
 
 ### Três formas de digitar cada comando
 

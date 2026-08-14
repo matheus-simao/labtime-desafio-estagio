@@ -166,18 +166,26 @@ energia cheia em 100/100 NORMAL, o Laser Contínuo equipado, os tripulantes Ana 
 Bruno com suas funções, e o resumo dos comandos agrupados por
 sistema.](docs/console-inicial.png)
 
-Uma sessão real exercitando os tickets — repare que o dano derruba a energia
-abaixo do limiar e **os quatro sistemas de bordo reagem sozinhos**, sem que o
-núcleo chame nenhum deles:
+Uma sessão real exercitando os três tickets:
 
-![Sessão no console: o comando tomar_dano com 81 de dano faz Escudos, Luzes,
-Painel e Suporte de Vida emitirem alertas em vermelho; a barra de energia fica
-vermelha em 19/100 CRÍTICO; em seguida trocar_funcao muda Ana de operadora de
-canhões para mecânica do motor, confirmando que é o mesmo objeto em memória; por
-fim atirar dispara o Laser Contínuo.](docs/console-sessao.png)
+![Sessão no console. Ticket 1: tomar_dano com 81 de dano faz Escudos, Luzes,
+Painel e Suporte de Vida emitirem alertas em vermelho, e a barra de energia fica
+vermelha em 19/100 CRÍTICO. Ticket 2: trocar_funcao muda Ana de operadora de
+canhões para mecânica do motor, confirmando que é o mesmo objeto em memória.
+Ticket 3: atirar dispara o Laser Contínuo com dano base 10; depois de
+adicionar_modificador fogo, a pilha vira Laser Contínuo mais Fogo e o mesmo
+comando atirar passa a incluir o Dano de Fogo.](docs/console-sessao.png)
 
-O print também mostra o modo guiado: quando o comando é digitado sem argumentos,
-o console pergunta o que falta e lista as opções válidas.
+Três coisas que o print evidencia:
+
+- **Ticket 1** — os quatro sistemas de bordo reagem sozinhos ao cruzar o limiar;
+  o núcleo não chama nenhum deles.
+- **Ticket 3** — o mesmo comando `atirar` aparece duas vezes, antes e depois do
+  modificador. A diferença entre as duas saídas é o efeito acoplado pelo decorator
+  em tempo de execução, sem troca de arma nem classe nova.
+- **Modo guiado** — comandos digitados sem argumentos fazem o console perguntar o
+  que falta, listando as opções válidas (`[Ana, Bruno]`, `[canhoneiro, mecanico,
+  medico]`).
 
 Para uma amostra em texto — útil para copiar e colar — veja a
 [sessão de exemplo](#sessão-de-exemplo) acima.
